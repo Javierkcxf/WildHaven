@@ -1,19 +1,20 @@
 ﻿@page "/"
 @using System.ComponentModel.DataAnnotations
+@using PresentacionWildHaven.Models
 
-<!-- Vinculamos los estilos -->
+@inject HttpClient Http
+
 <link href="css/style.css" rel="stylesheet" />
 <link href="css/index.css" rel="stylesheet" />
 
 <div class="home-container1">
     <div class="home-home">
+        <!-- Header -->
         <div class="home-header">
             <div class="home-logo-menu">
-                <img
-                    alt="BeigeandGreyModernPawIconPetStoreLogo111510"
+                <img alt="BeigeandGreyModernPawIconPetStoreLogo111510"
                     src="/images/beigeandgreymodernpawiconpetstorelogo111510-rg-200h.png"
-                    class="home-beigeand-grey-modern-paw-icon-pet-store-logo11"
-                />
+                    class="home-beigeand-grey-modern-paw-icon-pet-store-logo11" />
                 <span class="home-text96">FastReport</span>
                 <span class="home-text97">AnimalStatus</span>
                 <span class="home-text98">Educational tours</span>
@@ -26,50 +27,26 @@
                 <span class="home-text101">Login</span>
             </div>
         </div>
+
+        <!-- Hero Section -->
         <div class="home-hero-section">
             <div class="home-image-button">
                 <div class="home-image7">
-                    <img
-                        alt="SVGTail1996"
-                        src="/images/svgtail1996-hgbc.svg"
-                        class="home-svg-tail"
-                    />
-                    <img
-                        alt="Cat31994"
-                        src="/images/cat31994-rdac-300w.png"
-                        class="home-cat3"
-                    />
-                    <img
-                        alt="Heart1996"
-                        src="/images/heart1996-5xlr.svg"
-                        class="home-heart22"
-                    />
+                    <img alt="SVGTail1996" src="/images/svgtail1996-hgbc.svg" class="home-svg-tail" />
+                    <img alt="Cat31994" src="/images/cat31994-rdac-300w.png" class="home-cat3" />
+                    <img alt="Heart1996" src="/images/heart1996-5xlr.svg" class="home-heart22" />
                 </div>
             </div>
-            <img
-                alt="Heart1996"
-                src="/images/heart1996-aqv8.svg"
-                class="home-heart23"
-            />
+            <img alt="Heart1996" src="/images/heart1996-aqv8.svg" class="home-heart23" />
+
             <div class="home-image-description">
                 <div class="home-image-dog">
-                    <img
-                        alt="Dog11994"
-                        src="/images/dog11994-sb1f-400w.png"
-                        class="home-dog1"
-                    />
-                    <img
-                        alt="Heart1996"
-                        src="/images/heart1996-vm3r.svg"
-                        class="home-heart24"
-                    />
-                    <img
-                        alt="Heart1996"
-                        src="/images/heart1996-wyuw.svg"
-                        class="home-heart25"
-                    />
+                    <img alt="Dog11994" src="/images/dog11994-sb1f-400w.png" class="home-dog1" />
+                    <img alt="Heart1996" src="/images/heart1996-vm3r.svg" class="home-heart24" />
+                    <img alt="Heart1996" src="/images/heart1996-wyuw.svg" class="home-heart25" />
                 </div>
             </div>
+
             <div class="home-slogan"></div>
             <span class="home-text79">A Refuge for wildlife</span>
             <span class="home-text80">
@@ -77,80 +54,59 @@
                 <br />
                 <span>rescued wildlife a second chance.</span>
             </span>
+
             <div class="home-address">
-                <img
-                    alt="mappin2118"
-                    src="/images/mappin2118-0qspb.svg"
-                    class="home-mappin"
-                />
-                <span class="home-text84">
-                    2715 Ash Dr. San Jose, South Dakota 83475
-                </span>
+                <img alt="mappin2118" src="/images/mappin2118-0qspb.svg" class="home-mappin" />
+                <span class="home-text84">2715 Ash Dr. San Jose, South Dakota 83475</span>
             </div>
+
             <div class="home-image-description-button">
                 <div class="home-image8">
-                    <img
-                        alt="Cat11993"
-                        src="/images/cat11993-p7jl-500h.png"
-                        class="home-cat1"
-                    />
-                    <img
-                        alt="Heart1996"
-                        src="/images/heart1996-s2ji.svg"
-                        class="home-heart26"
-                    />
+                    <img alt="Cat11993" src="/images/cat11993-p7jl-500h.png" class="home-cat1" />
+                    <img alt="Heart1996" src="/images/heart1996-s2ji.svg" class="home-heart26" />
                 </div>
-                <img
-                    alt="Heart1996"
-                    src="/images/heart1996-bwoa.svg"
-                    class="home-heart27"
-                />
+                <img alt="Heart1996" src="/images/heart1996-bwoa.svg" class="home-heart27" />
             </div>
         </div>
-        <span class="home-text85">
+
+        <!-- About Section -->
+        <div class="home-about-section">
+            <span class="home-text85">
                 <p>
-      Our wildlife refuge is a compassionate and dedicated sanctuary
-      committed to protecting and caring for wild animals. We provide
-      a safe environment where rescued wildlife can heal, recover, and thrive.
-    </p>
-        </span>
-        <button class="home-button19">
-            <span class="home-text93">Services</span>
-            <div class="home-frame43">
-        
-                <img
-                    alt="arrowupright1529"
-                    src="/images/arrowupright1529-1w0q.svg"
-                    class="home-arrowupright4"
-                />
-            </div>
-        </button>
-        <span class="home-text94">We are Wild Haven</span>
-        <div class="home-frame1">
-            <div class="home-frame2">
-                <span class="home-text95">Questionnaire</span>
+                    Our wildlife refuge is a compassionate and dedicated sanctuary
+                    committed to protecting and caring for wild animals. We provide
+                    a safe environment where rescued wildlife can heal, recover, and thrive.
+                </p>
+            </span>
+            <button class="home-button19">
+                <span class="home-text93">Services</span>
+                <div class="home-frame43">
+                    <img alt="arrowupright1529" src="/images/arrowupright1529-1w0q.svg" class="home-arrowupright4" />
+                </div>
+            </button>
+            <span class="home-text94">We are Wild Haven</span>
+            <div class="home-frame1">
+                <div class="home-frame2">
+                    <span class="home-text95">Questionnaire</span>
+                </div>
             </div>
         </div>
+
+        <!-- Animals Status Section -->
         <div class="home-status-animals">
             <div class="home-content">
+                <span class="home-text78">Check the status of our rescued animals</span>
+                <span class="home-text77">
+                    Sponsor an animal and give it everything it needs at our shelter.
+                </span>
+
                 <div class="home-cards1">
                     <div class="home-card1">
                         <div class="home-image1">
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-icew.svg"
-                                class="home-heart10"
-                            />
-                            <img
-                                alt="Removebg21991"
-                                src="/images/removebg21991-94s7mn-300h.png"
-                                class="home-removebg2"
-                            />
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-aob.svg"
-                                class="home-heart11"
-                            />
+                            <img alt="Heart1991" src="/images/heart1991-icew.svg" class="home-heart10" />
+                            <img alt="Removebg21991" src="/images/removebg21991-94s7mn-300h.png"
+                                class="home-removebg2" />
+                            <img alt="Heart1991" src="/images/heart1991-aob.svg" class="home-heart11" />
                         </div>
                         <div class="home-titile-description-button1">
                             <span class="home-text59">Surgery for pets</span>
@@ -163,90 +119,53 @@
                             <span class="home-text61">View Details</span>
                         </button>
                     </div>
+
                     <div class="home-card2">
                         <div class="home-image2">
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-yfcf.svg"
-                                class="home-heart12"
-                            />
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-vfe.svg"
-                                class="home-heart13"
-                            />
-                            <img
-                                alt="Removebg41991"
-                                src="/images/removebg41991-78ah-400h.png"
-                                class="home-removebg4"
-                            />
+                            <img alt="Heart1991" src="/images/heart1991-yfcf.svg" class="home-heart12" />
+                            <img alt="Heart1991" src="/images/heart1991-vfe.svg" class="home-heart13" />
+                            <img alt="Removebg41991" src="/images/removebg41991-78ah-400h.png" class="home-removebg4" />
                         </div>
-                        <button class="home-titile-description-button2">
+                        <div class="home-titile-description-button2">
                             <span class="home-text62">Consultation</span>
                             <span class="home-text63">
                                 The veterinarian may also perform diagnostic tests such as
                                 blood work, urinalysis, or x-rays to help diagnose any
                                 underlying health issues.
                             </span>
-                        </button>
+                        </div>
                         <button class="home-button14">
                             <span class="home-text64">View Details</span>
                         </button>
                     </div>
+
                     <div class="home-card3">
                         <div class="home-image3">
-                            <img
-                                alt="Cat1991"
-                                src="/images/cat1991-bd4f-300w.png"
-                                class="home-cat"
-                            />
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-nerh.svg"
-                                class="home-heart14"
-                            />
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-y0xr.svg"
-                                class="home-heart15"
-                            />
+                            <img alt="Cat1991" src="/images/cat1991-bd4f-300w.png" class="home-cat" />
+                            <img alt="Heart1991" src="/images/heart1991-nerh.svg" class="home-heart14" />
+                            <img alt="Heart1991" src="/images/heart1991-y0xr.svg" class="home-heart15" />
                         </div>
-                        <button class="home-titile-description-button3">
+                        <div class="home-titile-description-button3">
                             <span class="home-text65">Caring for newborn</span>
                             <span class="home-text66">
                                 Animals do not require legal documents like humans do.
                                 However, some animals may need certain documents for
                                 specific purposes.
                             </span>
-                        </button>
+                        </div>
                         <button class="home-button15">
                             <span class="home-text67">View Details</span>
                         </button>
                     </div>
                 </div>
+
                 <div class="home-cards2">
                     <div class="home-card4">
                         <div class="home-image4">
-                            <img
-                                alt="Dog41991"
-                                src="/images/dog41991-3oym-400w.png"
-                                class="home-dog4"
-                            />
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-6zya.svg"
-                                class="home-heart16"
-                            />
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-9b07.svg"
-                                class="home-heart17"
-                            />
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-ejfc.svg"
-                                class="home-heart18"
-                            />
+                            <img alt="Dog41991" src="/images/dog41991-3oym-400w.png" class="home-dog4" />
+                            <img alt="Heart1991" src="/images/heart1991-6zya.svg" class="home-heart16" />
+                            <img alt="Heart1991" src="/images/heart1991-9b07.svg" class="home-heart17" />
+                            <img alt="Heart1991" src="/images/heart1991-ejfc.svg" class="home-heart18" />
                         </div>
                         <div class="home-titile-description-button4">
                             <span class="home-text68">Dentistry for animals</span>
@@ -259,13 +178,10 @@
                             <span class="home-text70">View Details</span>
                         </button>
                     </div>
+
                     <div class="home-card5">
                         <div class="home-image5">
-                            <img
-                                alt="Doctor1991"
-                                src="/images/doctor1991-knn8-400h.png"
-                                class="home-doctor"
-                            />
+                            <img alt="Doctor1991" src="/images/doctor1991-knn8-400h.png" class="home-doctor" />
                         </div>
                         <div class="home-titile-description-button5">
                             <span class="home-text71">Your pet's Documents</span>
@@ -279,28 +195,13 @@
                             <span class="home-text73">View Details</span>
                         </button>
                     </div>
+
                     <div class="home-card6">
                         <div class="home-image6">
-                            <img
-                                alt="Removebg11991"
-                                src="/images/removebg11991-yp8-400h.png"
-                                class="home-removebg1"
-                            />
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-c5h.svg"
-                                class="home-heart19"
-                            />
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-30w3.svg"
-                                class="home-heart20"
-                            />
-                            <img
-                                alt="Heart1991"
-                                src="/images/heart1991-6bem.svg"
-                                class="home-heart21"
-                            />
+                            <img alt="Removebg11991" src="/images/removebg11991-yp8-400h.png" class="home-removebg1" />
+                            <img alt="Heart1991" src="/images/heart1991-c5h.svg" class="home-heart19" />
+                            <img alt="Heart1991" src="/images/heart1991-30w3.svg" class="home-heart20" />
+                            <img alt="Heart1991" src="/images/heart1991-6bem.svg" class="home-heart21" />
                         </div>
                         <div class="home-titile-description-button6">
                             <span class="home-text74">Vaccination</span>
@@ -315,17 +216,13 @@
                         </button>
                     </div>
                 </div>
-                <span class="home-text77">
-                    Sponsor an animal and give it everything it needs at our
-                    shelter.
-                </span>
-                <span class="home-text78">
-                    Check the status of our rescued animals
-                </span>
             </div>
         </div>
+
+        <!-- Reviews Section -->
         <div class="home-reviews-section">
             <span class="home-text45">Our clients are always satisfied</span>
+
             <div class="home-review-cards1">
                 <div class="home-review-cards2">
                     <div class="home-review-card1">
@@ -342,6 +239,7 @@
                             skilled and provide personalized care for each animal.
                         </span>
                     </div>
+
                     <div class="home-review-card2">
                         <div class="home-avatar-user-name-date2">
                             <div class="home-avatar-user-name2">
@@ -359,6 +257,7 @@
                         </span>
                     </div>
                 </div>
+
                 <div class="home-review-cards3">
                     <div class="home-review-card3">
                         <div class="home-avatar-user-name-date3">
@@ -376,6 +275,7 @@
                             types of pets.
                         </span>
                     </div>
+
                     <div class="home-review-card4">
                         <div class="home-avatar-user-name-date4">
                             <div class="home-avatar-user-name4">
@@ -392,148 +292,133 @@
                     </div>
                 </div>
             </div>
-            <img
-                alt="Overlay2087"
-                src="/images/overlay2087-7dek-600h.png"
-                class="home-overlay"
-            />
+
+            <img alt="Overlay2087" src="/images/overlay2087-7dek-600h.png" class="home-overlay" />
             <button class="home-button12">
                 <span class="home-text58">View all Reviews</span>
                 <div class="home-frame42">
-                    <img
-                        alt="arrowupright2087"
-                        src="/images/arrowupright2087-cdv3.svg"
-                        class="home-arrowupright3"
-                    />
+                    <img alt="arrowupright2087" src="/images/arrowupright2087-cdv3.svg" class="home-arrowupright3" />
                 </div>
             </button>
         </div>
-         @* En tu archivo .razor *@
-        <div class="home-form1">
-        <div class="home-doctor-card">
-            <div class="home-form2">
-            <div class="home-inputs">
-                <input
-                type="text"
-                placeholder="Your Name"
-                class="home-input"
-                />
-                <input
-                type="text"
-                placeholder="Your Number"
-                class="home-input"
-                />
-                <input
-                type="text"
-                placeholder="Type of your Pet"
-                class="home-input"
-                />
-                <input
-                type="text"
-                placeholder="Direcction"
-                class="home-input"
-                />
-                <input
-                type="text"
-                placeholder="Additional Information"
-                class="home-input"
-                />
-            </div>
 
-            <button class="home-button11">
-                <span class="home-text38">Send</span>
-            </button>
+        <!-- Report Form Section -->
+        <div class="home-report-section">
 
-            <button class="home-icon-button">
-                <img
-                alt="arrowupright2117"
-                src="/images/arrowupright2117-a1z.svg"
-                class="home-arrowupright1"
-                />
-            </button>
-            </div>
+            <EditForm Model="@ReporteActual" OnValidSubmit="@Creartipoproducto">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
 
-            <div class="home-email">
-            <div class="home-frame41">
-                <img
-                alt="arrowupright2117"
-                src="/images/arrowupright2117-ma16.svg"
-                class="home-arrowupright2"
-                />
-            </div>
-            </div>
+                <div class="home-form1">
+                    <div class="home-doctor-card">
+                        <div class="home-form2">
+                            <div class="home-inputs">
+                                <InputText class="home-input" placeholder="Your Name"
+                                    @bind-Value="ReporteActual.name" />
+                                <InputText class="home-input" placeholder="Your Number"
+                                    @bind-Value="ReporteActual.number" />
+                                <InputText class="home-input" placeholder="Type of your Pet"
+                                    @bind-Value="ReporteActual.typePet" />
+                                <InputText class="home-input" placeholder="Direcction"
+                                    @bind-Value="ReporteActual.direcction" />
+                                <InputText class="home-input" placeholder="Additional Information"
+                                    @bind-Value="ReporteActual.addictionalInformation" />
+                            </div>
 
-            <div class="home-titles">
-            <span class="home-text39">
-                <span>Quick Report Form</span><br /><br />
-                <span>Help us save animals in dangerous situations</span>
-            </span>
-            </div>
+                            <button type="submit" class="home-button11">
+                                <span class="home-text38">@textoBotonGuardar</span>
+                            </button>
 
-            <span class="home-text44">Willohaven@gmail.com</span>
-        </div>
+                        </div>
+                        <div class="home-titles">
+                            <span class="home-text39">
+                                <span>Quick Report Form</span><br /><br />
+                                <span>Help us save animals in dangerous situations</span>
+                            </span>
+                        </div>
+                        <div class="home-form-actions">
+                            <button class="home-icon-button">
+                                <img alt="arrowupright2117" src="/images/arrowupright2117-a1z.svg"
+                                    class="home-arrowupright1" />
+                            </button>
+
+                            <div class="home-email">
+                                <div class="home-frame41">
+                                    <img alt="arrowupright2117" src="/images/arrowupright2117-ma16.svg"
+                                        class="home-arrowupright2" />
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(mensaje))
+                        {
+                            <div class="@claseAviso">@mensaje</div>
+                        }
+                    </div>
+                </div>
+            </EditForm>
+
+
         </div>
 
-        <div class="home-frame39"></div>
+        <!-- Footer -->
         <div class="home-footer">
-            <div class="home-titile-button-expanded-menu"></div>
-            <div class="home-titile-button">
-                <span class="home-text10">Always happy to help your friend</span>
-            </div>
-            <button class="home-button10">
-                <span class="home-text11">Free Call</span>
-            </button>
+            <div class="home-titile-button-expanded-menu">
+                <div class="home-titile-button">
+                    <span class="home-text10">Always happy to help your friend</span>
+                </div>
+                <button class="home-button10">
+                    <span class="home-text11">Free Call</span>
+                </button>
 
-            <div class="home-expanded-menu">
-                <div class="home-frame17">
-                    <span class="home-text12">About Us</span>
-                    <div class="home-frame18">
-                        <span class="home-text13">Address</span>
-                        <span class="home-text14">Connection</span>
+                <div class="home-expanded-menu">
+                    <div class="home-frame17">
+                        <span class="home-text12">About Us</span>
+                        <div class="home-frame18">
+                            <span class="home-text13">Address</span>
+                            <span class="home-text14">Connection</span>
+                        </div>
                     </div>
-                </div>
-                <div class="home-frame19">
-                    <span class="home-text15">Services</span>
-                    <div class="home-frame201">
-                        <span class="home-text16">Dentistry</span>
-                        <span class="home-text17">Documentation</span>
-                        <span class="home-text18">Vaccination</span>
-                        <span class="home-text19">Surgery</span>
-                        <span class="home-text20">Consultation</span>
-                        <span class="home-text21">Newborns</span>
+                    <div class="home-frame19">
+                        <span class="home-text15">Services</span>
+                        <div class="home-frame201">
+                            <span class="home-text16">Dentistry</span>
+                            <span class="home-text17">Documentation</span>
+                            <span class="home-text18">Vaccination</span>
+                            <span class="home-text19">Surgery</span>
+                            <span class="home-text20">Consultation</span>
+                            <span class="home-text21">Newborns</span>
+                        </div>
                     </div>
-                </div>
-                <div class="home-frame202">
-                    <span class="home-text22">Doctors</span>
-                    <div class="home-frame203">
-                        <span class="home-text23">Specialists</span>
-                        <span class="home-text24">Licenses</span>
-                        <span class="home-text25">Practice</span>
-                        <span class="home-text26">Vacancies</span>
+                    <div class="home-frame202">
+                        <span class="home-text22">Doctors</span>
+                        <div class="home-frame203">
+                            <span class="home-text23">Specialists</span>
+                            <span class="home-text24">Licenses</span>
+                            <span class="home-text25">Practice</span>
+                            <span class="home-text26">Vacancies</span>
+                        </div>
                     </div>
-                </div>
-                <div class="home-frame22">
-                    <span class="home-text27">Charity</span>
-                    <div class="home-frame204">
-                        <span class="home-text28">Promotions</span>
-                        <span class="home-text29">Partners</span>
-                        <span class="home-text30">Achievements</span>
+                    <div class="home-frame22">
+                        <span class="home-text27">Charity</span>
+                        <div class="home-frame204">
+                            <span class="home-text28">Promotions</span>
+                            <span class="home-text29">Partners</span>
+                            <span class="home-text30">Achievements</span>
+                        </div>
                     </div>
-                </div>
-                <div class="home-frame23">
-                    <span class="home-text31">Reviews</span>
-                    <div class="home-frame205">
-                        <span class="home-text32">Our clients</span>
-                        <span class="home-text33">On platforms</span>
+                    <div class="home-frame23">
+                        <span class="home-text31">Reviews</span>
+                        <div class="home-frame205">
+                            <span class="home-text32">Our clients</span>
+                            <span class="home-text33">On platforms</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <img
-                alt="Divider2118"
-                src="/images/divider2118-eu6-200h.png"
-                class="home-divider"
-            />
+            <img alt="Divider2118" src="/images/divider2118-eu6-200h.png" class="home-divider" />
+
             <div class="home-copywriting-social-media-privacy">
                 <div class="home-frame38">
                     <span class="home-text34">Copywriting</span>
@@ -546,71 +431,91 @@
                 <div class="home-social-media">
                     <div class="home-instagram">
                         <div class="home-group1">
-                            <img
-                                alt="Vector2118"
-                                src="/images/vector2118-8e12.svg"
-                                class="home-vector1"
-                            />
-                            <img
-                                alt="Vector2118"
-                                src="/images/vector2118-9c67.svg"
-                                class="home-vector2"
-                            />
-                            <img
-                                alt="Vector2118"
-                                src="/images/vector2118-9e3p.svg"
-                                class="home-vector3"
-                            />
+                            <img alt="Vector2118" src="/images/vector2118-8e12.svg" class="home-vector1" />
+                            <img alt="Vector2118" src="/images/vector2118-9c67.svg" class="home-vector2" />
+                            <img alt="Vector2118" src="/images/vector2118-9e3p.svg" class="home-vector3" />
                         </div>
                     </div>
-                    <img
-                        alt="facebook2118"
-                        src="/images/facebook2118-3z1.svg"
-                        class="home-facebook"
-                    />
+                    <img alt="facebook2118" src="/images/facebook2118-3z1.svg" class="home-facebook" />
                     <div class="home-linkedin">
                         <div class="home-group2">
-                            <img
-                                alt="Vector2118"
-                                src="/images/vector2118-rbnj.svg"
-                                class="home-vector4"
-                            />
+                            <img alt="Vector2118" src="/images/vector2118-rbnj.svg" class="home-vector4" />
                         </div>
                     </div>
                     <div class="home-telegram">
-                        <img
-                            alt="Subtract2118"
-                            src="/images/subtract2118-ljam.svg"
-                            class="home-subtract"
-                        />
+                        <img alt="Subtract2118" src="/images/subtract2118-ljam.svg" class="home-subtract" />
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- TeleportHQ Attribution -->
+        <a href="https://play.teleporthq.io/signup" class="home-link">
+            <div aria-label="Sign up to TeleportHQ" class="home-container2">
+                <svg width="24" height="24" viewBox="0 0 19 21" fill="none" xmlns="http://www.w3.org/2000/svg"
+                    class="home-icon1">
+                    <path
+                        d="M9.1017 4.64355H2.17867C0.711684 4.64355 -0.477539 5.79975 -0.477539 7.22599V13.9567C-0.477539 15.3829 0.711684 16.5391 2.17867 16.5391H9.1017C10.5687 16.5391 11.7579 15.3829 11.7579 13.9567V7.22599C11.7579 5.79975 10.5687 4.64355 9.1017 4.64355Z"
+                        fill="#B23ADE"></path>
+                    <path
+                        d="M10.9733 12.7878C14.4208 12.7878 17.2156 10.0706 17.2156 6.71886C17.2156 3.3671 14.4208 0.649963 10.9733 0.649963C7.52573 0.649963 4.73096 3.3671 4.73096 6.71886C4.73096 10.0706 7.52573 12.7878 10.9733 12.7878Z"
+                        fill="#FF5C5C"></path>
+                    <path
+                        d="M17.7373 13.3654C19.1497 14.1588 19.1497 15.4634 17.7373 16.2493L10.0865 20.5387C8.67402 21.332 7.51855 20.6836 7.51855 19.0968V10.5141C7.51855 8.92916 8.67402 8.2807 10.0865 9.07221L17.7373 13.3654Z"
+                        fill="#2874DE"></path>
+                </svg>
+            </div>
+        </a>
     </div>
-    <a href="https://play.teleporthq.io/signup" class="home-link">
-        <div aria-label="Sign up to TeleportHQ" class="home-container2">
-            <svg
-                width="24"
-                height="24"
-                viewBox="0 0 19 21"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                class="home-icon1"
-            >
-                <path
-                    d="M9.1017 4.64355H2.17867C0.711684 4.64355 -0.477539 5.79975 -0.477539 7.22599V13.9567C-0.477539 15.3829 0.711684 16.5391 2.17867 16.5391H9.1017C10.5687 16.5391 11.7579 15.3829 11.7579 13.9567V7.22599C11.7579 5.79975 10.5687 4.64355 9.1017 4.64355Z"
-                    fill="#B23ADE"
-                ></path>
-                <path
-                    d="M10.9733 12.7878C14.4208 12.7878 17.2156 10.0706 17.2156 6.71886C17.2156 3.3671 14.4208 0.649963 10.9733 0.649963C7.52573 0.649963 4.73096 3.3671 4.73096 6.71886C4.73096 10.0706 7.52573 12.7878 10.9733 12.7878Z"
-                    fill="#FF5C5C"
-                ></path>
-                <path
-                    d="M17.7373 13.3654C19.1497 14.1588 19.1497 15.4634 17.7373 16.2493L10.0865 20.5387C8.67402 21.332 7.51855 20.6836 7.51855 19.0968V10.5141C7.51855 8.92916 8.67402 8.2807 10.0865 9.07221L17.7373 13.3654Z"
-                    fill="#2874DE"
-                ></path>
-            </svg>
-        </div>
-    </a>
 </div>
+
+@code {
+    [SupplyParameterFromForm]
+    private ReporteSinRegistro ReporteActual { get; set; } = new();
+    private string textoBotonGuardar = "Send";
+    private string mensaje = "";
+    private string claseAviso = "alert alert-info";
+    private const string urlBaseApi = "api/reportesinregistro";
+
+    private async Task Creartipoproducto()
+    {
+        LimpiarMensajes();
+
+        try
+        {
+            var respuesta = await Http.PostAsJsonAsync(urlBaseApi, ReporteActual);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Entregable creado correctamente.";
+                claseAviso = "alert alert-success";
+                ReporteActual = new ReporteSinRegistro();
+                textoBotonGuardar = "Send";
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensaje = $"No se pudo crear el Entregable. Detalle: {detalle}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al crear Entregable: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private void LimpiarMensajes()
+    {
+        mensaje = "";
+        claseAviso = "alert alert-info";
+    }
+
+    private void LimpiarFormulario()
+    {
+        ReporteActual = new ReporteSinRegistro();
+        textoBotonGuardar = "Crear";
+        LimpiarMensajes();
+    }
+}

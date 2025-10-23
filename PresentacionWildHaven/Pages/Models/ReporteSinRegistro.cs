@@ -1,6 +1,6 @@
 using System;
 
-namespace Pages.Models
+namespace PresentacionWildHaven.Models
 {
     public class ReporteSinRegistro
     {
