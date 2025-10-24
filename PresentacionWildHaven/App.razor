@@ -1,6 +1,10 @@
 ﻿@page "/"
 @using System.ComponentModel.DataAnnotations
 @using PresentacionWildHaven.Models
+@using PresentacionWildHaven.Services
+@using PresentacionWildHaven.Shared
+@inherits LayoutComponentBase
+@inject ToastService Notificador
 
 @inject HttpClient Http
 
@@ -336,24 +340,6 @@
                                 <span>Help us save animals in dangerous situations</span>
                             </span>
                         </div>
-                        <div class="home-form-actions">
-                            <button class="home-icon-button">
-                                <img alt="arrowupright2117" src="/images/arrowupright2117-a1z.svg"
-                                    class="home-arrowupright1" />
-                            </button>
-
-                            <div class="home-email">
-                                <div class="home-frame41">
-                                    <img alt="arrowupright2117" src="/images/arrowupright2117-ma16.svg"
-                                        class="home-arrowupright2" />
-                                </div>
-                            </div>
-                        </div>
-
-                        @if (!string.IsNullOrEmpty(mensaje))
-                        {
-                            <div class="@claseAviso">@mensaje</div>
-                        }
                     </div>
                 </div>
             </EditForm>
@@ -468,18 +454,43 @@
         </a>
     </div>
 </div>
+<div class="page">
+    <div class="sidebar">
+        @Body
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/site.js"></script>
+
+<Toast @ref="toast" />
 
 @code {
     [SupplyParameterFromForm]
     private ReporteSinRegistro ReporteActual { get; set; } = new();
     private string textoBotonGuardar = "Send";
-    private string mensaje = "";
-    private string claseAviso = "alert alert-info";
-    private const string urlBaseApi = "api/reportesinregistro";
 
+    private const string urlBaseApi = "api/reportesinregistro";
+    private Toast? toast;
+
+    protected override void OnInitialized()
+    {
+        Notificador.OnShow += MostrarToast;
+    }
+
+    private async Task MostrarToast(string mensaje, string tipo)
+    {
+        if (toast != null)
+        {
+            await toast.MostrarAsync(mensaje, tipo);
+        }
+    }
+
+    public void Dispose()
+    {
+        Notificador.OnShow -= MostrarToast;
+    }
     private async Task Creartipoproducto()
     {
-        LimpiarMensajes();
 
         try
         {
@@ -487,35 +498,25 @@
 
             if (respuesta.IsSuccessStatusCode)
             {
-                mensaje = "Entregable creado correctamente.";
-                claseAviso = "alert alert-success";
+                await Notificador.MostrarAsync("✅ Reporte creado correctamente.", "success");
                 ReporteActual = new ReporteSinRegistro();
                 textoBotonGuardar = "Send";
             }
             else
             {
                 var detalle = await respuesta.Content.ReadAsStringAsync();
-                mensaje = $"No se pudo crear el Entregable. Detalle: {detalle}";
-                claseAviso = "alert alert-danger";
+                await Notificador.MostrarAsync("⚠️ No se pudo crear el reporte. Detalle: {detalle}", "warning");
             }
         }
         catch (Exception error)
         {
-            mensaje = $"Error al crear Entregable: {error.Message}";
-            claseAviso = "alert alert-danger";
+            await Notificador.MostrarAsync($"❌ Error al crear reporte: {error.Message}", "error");
         }
-    }
-
-    private void LimpiarMensajes()
-    {
-        mensaje = "";
-        claseAviso = "alert alert-info";
     }
 
     private void LimpiarFormulario()
     {
         ReporteActual = new ReporteSinRegistro();
-        textoBotonGuardar = "Crear";
-        LimpiarMensajes();
+        textoBotonGuardar = "Send";
     }
 }

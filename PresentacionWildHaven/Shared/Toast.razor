@@ -1,0 +1,31 @@
+@inject IJSRuntime JS
+
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div class="toast align-items-center border-0" id="toast-global" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body text-white @colorClase">
+                @mensaje
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string mensaje = string.Empty;
+    private string colorClase = "bg-info";
+
+    public async Task MostrarAsync(string mensaje, string tipo = "info")
+    {
+        this.mensaje = mensaje;
+        colorClase = tipo switch
+        {
+            "success" => "bg-success",
+            "error" => "bg-danger",
+            "warning" => "bg-warning text-dark",
+            _ => "bg-info"
+        };
+        StateHasChanged();
+        await JS.InvokeVoidAsync("mostrarToast");
+    }
+}
