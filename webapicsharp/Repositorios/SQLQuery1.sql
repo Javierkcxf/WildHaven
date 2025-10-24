@@ -6,7 +6,7 @@ GO
 --MODULO DE USUARIOS Y AUNTENTICACION
 CREATE TABLE Roles (
     RolID INT IDENTITY(1,1) PRIMARY KEY,
-    Nombre VARCHAR(50) NOT NULL UNIQUE, -- 'Usuario', 'Administrador', 'Veterinario'
+    Nombre VARCHAR(50) NOT NULL UNIQUE, 
     Descripcion VARCHAR(255),
     FechaCreacion DATETIME2 DEFAULT GETDATE()
 );
@@ -24,7 +24,7 @@ CREATE TABLE Usuarios (
     TokenExpiracion DATETIME2
 );
 
--- M�DULO DE REPORTES Y FAUNA
+-- MODULO DE REPORTES Y FAUNA
 CREATE TABLE Especies (
     EspecieID INT IDENTITY(1,1) PRIMARY KEY,
     NombreComun VARCHAR(100) NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE Especies (
 
 CREATE TABLE EstadosReporte (
     EstadoID INT IDENTITY(1,1) PRIMARY KEY,
-    Nombre VARCHAR(50) NOT NULL UNIQUE, -- 'Recibido', 'En revisi�n', 'Asignado', 'Atendido', 'Cerrado'
+    Nombre VARCHAR(50) NOT NULL UNIQUE, 
     Descripcion VARCHAR(255),
     Orden INT NOT NULL
 );
@@ -44,15 +44,15 @@ CREATE TABLE Reportes (
     ReporteID INT IDENTITY(1,1) PRIMARY KEY,
     UsuarioID INT FOREIGN KEY REFERENCES Usuarios(UsuarioID),
     EspecieID INT FOREIGN KEY REFERENCES Especies(EspecieID),
-    DescripcionEspecie VARCHAR(150), -- Por si no encuentra la especie en cat�logo
-    EstadoAnimal VARCHAR(100), -- 'Herido', 'En riesgo', 'Sano', 'Cr�tico'
+    DescripcionEspecie VARCHAR(150), 
+    EstadoAnimal VARCHAR(100),
     DireccionTexto VARCHAR(500),
     EstadoID INT FOREIGN KEY REFERENCES EstadosReporte(EstadoID),
     FechaCreacion DATETIME2 DEFAULT GETDATE(),
     FechaActualizacion DATETIME2 DEFAULT GETDATE(),
 );
 CREATE TABLE ReporteSinRegistro (
-    id INT IDENTITY(1,1) PRIMARY KEY, -- Clave primaria autoincremental
+    id INT IDENTITY(1,1) PRIMARY KEY, 
     [name] NVARCHAR(100) NULL,
     number NVARCHAR(50) NULL,
     typePet NVARCHAR(50) NULL,
@@ -61,16 +61,16 @@ CREATE TABLE ReporteSinRegistro (
 );
 
 
---M�DULO MULTIMEDIA
+--MODULO MULTIMEDIA
 CREATE TABLE Multimedia (
     MultimediaID INT IDENTITY(1,1) PRIMARY KEY,
     ReporteID INT NOT NULL FOREIGN KEY REFERENCES Reportes(ReporteID),
-    TipoArchivo VARCHAR(50) NOT NULL, -- 'imagen', 'video', 'audio'
+    TipoArchivo VARCHAR(50) NOT NULL, 
     NombreArchivo VARCHAR(255) NOT NULL,
     RutaAlmacenamiento VARCHAR(500) NOT NULL,
     FechaSubida DATETIME2 DEFAULT GETDATE(),
 );
---M�DULO CL�NICO Y ANIMALES
+--MODULO CLINICO Y ANIMALES
 CREATE TABLE Animales (
     AnimalID INT IDENTITY(1,1) PRIMARY KEY,
     EspecieID INT NOT NULL FOREIGN KEY REFERENCES Especies(EspecieID),
@@ -78,7 +78,7 @@ CREATE TABLE Animales (
     Nombre VARCHAR(100),
     CodigoIdentificacion VARCHAR(50) UNIQUE,
     FechaIngreso DATETIME2 NOT NULL,
-    EstadoSalud VARCHAR(100), -- 'En tratamiento', 'Estable', 'Cr�tico', 'Recuperado'
+    EstadoSalud VARCHAR(100), 
     FechaLiberacion DATETIME2,
     LugarLiberacion VARCHAR(255),
     Observaciones TEXT
@@ -89,14 +89,14 @@ CREATE TABLE SeguimientosClinicos (
     AnimalID INT NOT NULL FOREIGN KEY REFERENCES Animales(AnimalID),
     UsuarioID INT NOT NULL FOREIGN KEY REFERENCES Usuarios(UsuarioID),
     Fecha DATETIME2 DEFAULT GETDATE(),
-    TipoSeguimiento VARCHAR(100), -- 'Consulta', 'Tratamiento', 'Cirug�a'
+    TipoSeguimiento VARCHAR(100),
     Diagnostico TEXT,
     Tratamiento TEXT,
     Medicamentos TEXT,
     CostoTratamiento DECIMAL(10,2),
     ProximaRevision DATETIME2
 );
---M�DULO DE APADRINAMIENTO
+--MODULO DE APADRINAMIENTO
 CREATE TABLE Apadrinamientos (
     ApadrinamientoID INT IDENTITY(1,1) PRIMARY KEY,
     UsuarioID INT NOT NULL FOREIGN KEY REFERENCES Usuarios(UsuarioID),
@@ -113,12 +113,12 @@ CREATE TABLE Donaciones (
     UsuarioID INT NOT NULL FOREIGN KEY REFERENCES Usuarios(UsuarioID),
     FechaDonacion DATETIME2 DEFAULT GETDATE(),
 );
---M�DULO DE NOTIFICACIONES Y TRAZABILIDAD
+--MODULO DE NOTIFICACIONES Y TRAZABILIDAD
 CREATE TABLE HistorialAcciones (
     HistorialID INT IDENTITY(1,1) PRIMARY KEY,
     ReporteID INT NOT NULL FOREIGN KEY REFERENCES Reportes(ReporteID),
     UsuarioID INT NOT NULL FOREIGN KEY REFERENCES Usuarios(UsuarioID),
-    Accion VARCHAR(100) NOT NULL, -- 'Estado cambiado', 'Asignado a veterinario', 'Comentario agregado'
+    Accion VARCHAR(100) NOT NULL, 
     Descripcion TEXT,
     FechaAccion DATETIME2 DEFAULT GETDATE()
 );
@@ -126,12 +126,12 @@ CREATE TABLE HistorialAcciones (
 CREATE TABLE Notificaciones (
     NotificacionID INT IDENTITY(1,1) PRIMARY KEY,
     UsuarioID INT NOT NULL FOREIGN KEY REFERENCES Usuarios(UsuarioID),
-    Tipo VARCHAR(50) NOT NULL, -- 'Email', 'Push', 'SMS'
+    Tipo VARCHAR(50) NOT NULL, 
     Titulo VARCHAR(255) NOT NULL,
     Mensaje TEXT NOT NULL,
     FechaEnvio DATETIME2 DEFAULT GETDATE(),
-    EntidadRelacionada VARCHAR(50), -- 'Reporte', 'Apadrinamiento'
-    EntidadID INT -- ID del reporte o apadrinamiento relacionado
+    EntidadRelacionada VARCHAR(50), 
+    EntidadID INT 
 );
 
 CREATE TABLE Auditoria (
