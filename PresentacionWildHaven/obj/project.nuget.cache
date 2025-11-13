@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "eFSnKthbH9s=",
+  "dgSpecHash": "DVbHMlTW1RM=",
   "success": true,
   "projectFilePath": "C:\\Users\\ASUS\\Desktop\\WildHaven\\PresentacionWildHaven\\PresentacionWildHaven.csproj",
   "expectedPackageFiles": [
@@ -28,8 +28,8 @@
     "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.extensions.primitives\\9.0.10\\microsoft.extensions.primitives.9.0.10.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.jsinterop\\9.0.10\\microsoft.jsinterop.9.0.10.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.jsinterop.webassembly\\9.0.10\\microsoft.jsinterop.webassembly.9.0.10.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.net.illink.tasks\\9.0.10\\microsoft.net.illink.tasks.9.0.10.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.net.sdk.webassembly.pack\\9.0.10\\microsoft.net.sdk.webassembly.pack.9.0.10.nupkg.sha512"
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.net.illink.tasks\\9.0.11\\microsoft.net.illink.tasks.9.0.11.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.net.sdk.webassembly.pack\\9.0.11\\microsoft.net.sdk.webassembly.pack.9.0.11.nupkg.sha512"
   ],
   "logs": []
 }

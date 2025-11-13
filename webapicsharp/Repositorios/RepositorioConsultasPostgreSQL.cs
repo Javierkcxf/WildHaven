@@ -9,10 +9,7 @@ using webapicsharp.Servicios.Abstracciones;
 
 namespace webapicsharp.Repositorios
 {
-    /// <summary>
-    /// Implementación de repositorio para ejecutar consultas y procedimientos almacenados en PostgreSQL.
-    /// Encapsula la lógica de conexión y mapeo de parámetros.
-    /// </summary>
+
     public sealed class RepositorioConsultasPostgreSQL : IRepositorioConsultas
     {
         private readonly IProveedorConexion _proveedorConexion;
@@ -22,12 +19,9 @@ namespace webapicsharp.Repositorios
             _proveedorConexion = proveedorConexion ?? throw new ArgumentNullException(nameof(proveedorConexion));
         }
 
-        // ================================================================
-        // MÉTODO AUXILIAR: Mapea tipos de datos de PostgreSQL a NpgsqlDbType
-        // ================================================================
         private NpgsqlDbType MapearTipo(string tipo)
         {
-            // Traduce tipos de la base de datos a tipos que Npgsql entiende
+
             return tipo.ToLower() switch
             {
                 "text"        => NpgsqlDbType.Text,
@@ -50,13 +44,10 @@ namespace webapicsharp.Repositorios
                 "date"        => NpgsqlDbType.Date,
                 "numeric"     => NpgsqlDbType.Numeric,
                 "decimal"     => NpgsqlDbType.Numeric,
-                _             => NpgsqlDbType.Text // valor por defecto
+                _             => NpgsqlDbType.Text 
             };
         }
 
-        // ================================================================
-        // MÉTODO AUXILIAR: Obtiene metadatos de parámetros de un SP en PostgreSQL
-        // ================================================================
         private async Task<List<(string Nombre, string Modo, string Tipo)>> ObtenerMetadatosParametrosAsync(
             NpgsqlConnection conexion,
             string nombreSP)
@@ -81,7 +72,7 @@ namespace webapicsharp.Repositorios
             while (await reader.ReadAsync())
             {
                 string nombre = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
-                string modo = reader.IsDBNull(1) ? "IN" : reader.GetString(1);   // valor por defecto: IN
+                string modo = reader.IsDBNull(1) ? "IN" : reader.GetString(1);   
                 string tipo = reader.IsDBNull(2) ? "text" : reader.GetString(2);
 
                 lista.Add((nombre, modo, tipo));
@@ -90,9 +81,6 @@ namespace webapicsharp.Repositorios
             return lista;
         }
 
-        // ================================================================
-        // MÉTODO PRINCIPAL: Ejecuta un procedimiento almacenado genérico con parámetros dinámicos
-        // ================================================================
         public async Task<DataTable> EjecutarProcedimientoAlmacenadoConDictionaryAsync(
             string nombreSP,
             Dictionary<string, object?> parametros)
@@ -104,10 +92,8 @@ namespace webapicsharp.Repositorios
             await using var conexion = new NpgsqlConnection(cadenaConexion);
             await conexion.OpenAsync();
 
-            // 1. Consulta los metadatos de los parámetros del SP
             var metadatos = await ObtenerMetadatosParametrosAsync(conexion, nombreSP);
 
-            // 2. Normaliza las claves de parámetros (@ opcional, case-insensitive)
             var parametrosNormalizados = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in parametros ?? new Dictionary<string, object?>())
             {
@@ -115,12 +101,10 @@ namespace webapicsharp.Repositorios
                 parametrosNormalizados[clave] = kv.Value;
             }
 
-            // 3. Construye el comando para ejecutar el SP
             await using var comando = new NpgsqlCommand(nombreSP, conexion);
             comando.CommandType = CommandType.StoredProcedure;
             comando.CommandTimeout = 300;
 
-            // Agrega cada parámetro según IN, OUT o INOUT
             foreach (var meta in metadatos)
             {
                 string clave = meta.Nombre;
@@ -159,7 +143,6 @@ namespace webapicsharp.Repositorios
                 }
             }
 
-            // 4. Ejecuta el SP y captura resultados
             var tabla = new DataTable();
             try
             {
@@ -168,11 +151,10 @@ namespace webapicsharp.Repositorios
             }
             catch
             {
-                // Si no devuelve resultados, al menos se ejecuta
+
                 await comando.ExecuteNonQueryAsync();
             }
 
-            // 5. Agrega los valores de parámetros OUT/INOUT como filas del DataTable
             foreach (NpgsqlParameter param in comando.Parameters)
             {
                 if (param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput)
@@ -189,9 +171,6 @@ namespace webapicsharp.Repositorios
             return tabla;
         }
 
-        // ================================================================
-        // MÉTODO: Ejecuta una consulta SQL parametrizada
-        // ================================================================
         public async Task<DataTable> EjecutarConsultaParametrizadaConDictionaryAsync(
             string consultaSQL, Dictionary<string, object?> parametros,
             int maximoRegistros = 10000, string? esquema = null)
@@ -210,9 +189,6 @@ namespace webapicsharp.Repositorios
             return tabla;
         }
 
-        // ================================================================
-        // MÉTODO: Valida si una consulta SQL con parámetros es sintácticamente correcta
-        // ================================================================
         public async Task<(bool esValida, string? mensajeError)> ValidarConsultaConDictionaryAsync(
             string consultaSQL, Dictionary<string, object?> parametros)
         {
@@ -235,9 +211,6 @@ namespace webapicsharp.Repositorios
             }
         }
 
-        // ================================================================
-        // MÉTODOS: Consultas de metadatos de base de datos/tablas
-        // ================================================================
         public async Task<string?> ObtenerEsquemaTablaAsync(string nombreTabla, string esquemaPredeterminado)
         {
             string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();

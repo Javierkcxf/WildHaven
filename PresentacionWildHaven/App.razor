@@ -309,7 +309,7 @@
         <!-- Report Form Section -->
         <div class="home-report-section">
 
-            <EditForm Model="@ReporteActual" OnValidSubmit="@Creartipoproducto">
+            <EditForm Model="@ReporteActual" OnValidSubmit="@CrearReporte">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
@@ -489,7 +489,7 @@
     {
         Notificador.OnShow -= MostrarToast;
     }
-    private async Task Creartipoproducto()
+    private async Task CrearReporte()
     {
 
         try

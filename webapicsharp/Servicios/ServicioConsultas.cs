@@ -1,21 +1,3 @@
-// --------------------------------------------------------------
-// Archivo: ServicioConsultas.cs (VERSIÓN COMPLETA)
-// Ruta: Servicios/ServicioConsultas.cs
-// --------------------------------------------------------------
-//
-// Implementación GENÉRICA de la lógica de negocio para consultas SQL parametrizadas
-// y procedimientos almacenados.
-// Usa Dictionary<string, object?> en lugar de parámetros específicos de motor.
-//
-// Arquitectura:
-// JSON → Dictionary<string, object?> → IRepositorioConsultas → Motor específico
-//
-// Beneficios:
-// - Independencia total del motor de BD
-// - Reutilizable con PostgreSQL, SQL Server, MariaDB, etc.
-// - Testing más simple
-// - Mantiene compatibilidad con SqlParameter legacy
-// --------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
@@ -45,9 +27,6 @@ namespace webapicsharp.Servicios
                 "IConfiguration no puede ser null. Problema en configuración de ASP.NET Core.");
         }
 
-        // ================================================================
-        // VALIDACIÓN DE CONSULTAS SQL (GENÉRICA)
-        // ================================================================
         public (bool esValida, string? mensajeError) ValidarConsultaSQL(string consulta, string[] tablasProhibidas)
         {
             if (string.IsNullOrWhiteSpace(consulta))
@@ -67,9 +46,6 @@ namespace webapicsharp.Servicios
             return (true, null);
         }
 
-        // ================================================================
-        // CONVERSIÓN DE PARÁMETROS JSON → Dictionary TIPADO
-        // ================================================================
         private Dictionary<string, object?> ConvertirParametrosDesdeJson(Dictionary<string, object?>? parametros)
         {
             var parametrosGenericos = new Dictionary<string, object?>();
@@ -153,9 +129,6 @@ namespace webapicsharp.Servicios
             return element.ToString() ?? "";
         }
 
-        // ================================================================
-        // EJECUCIÓN DE CONSULTAS PARAMETRIZADAS
-        // ================================================================
         public async Task<DataTable> EjecutarConsultaParametrizadaAsync(
             string consulta,
             Dictionary<string, object?> parametros,
@@ -193,9 +166,6 @@ namespace webapicsharp.Servicios
             return await EjecutarConsultaParametrizadaAsync(consulta, parametrosGenericos, 10000, null);
         }
 
-        // ================================================================
-        // EJECUCIÓN DE PROCEDIMIENTOS ALMACENADOS
-        // ================================================================
         public async Task<DataTable> EjecutarProcedimientoAlmacenadoAsync(
             string nombreSP,
             Dictionary<string, object?>? parametros,
