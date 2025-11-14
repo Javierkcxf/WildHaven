@@ -42,24 +42,19 @@ CREATE TABLE EstadosReporte (
 
 CREATE TABLE Reportes (
     ReporteID INT IDENTITY(1,1) PRIMARY KEY,
-    UsuarioID INT FOREIGN KEY REFERENCES Usuarios(UsuarioID),
-    EspecieID INT FOREIGN KEY REFERENCES Especies(EspecieID),
-    DescripcionEspecie VARCHAR(150), 
-    EstadoAnimal VARCHAR(100),
-    DireccionTexto VARCHAR(500),
-    EstadoID INT FOREIGN KEY REFERENCES EstadosReporte(EstadoID),
+    UsuarioID INT NULL FOREIGN KEY REFERENCES Usuarios(UsuarioID),
+    EspecieID INT NULL FOREIGN KEY REFERENCES Especies(EspecieID),
+    DescripcionEspecie VARCHAR(150) NULL,
+    EstadoAnimal VARCHAR(100) NULL,
+    DireccionTexto VARCHAR(500) NULL,
+    NombreReportante NVARCHAR(100) NULL,
+    TelefonoReportante NVARCHAR(50) NULL,
+    TipoMascota NVARCHAR(50) NULL,
+    InformacionAdicional NVARCHAR(500) NULL,
+    EstadoID INT NULL FOREIGN KEY REFERENCES EstadosReporte(EstadoID),
     FechaCreacion DATETIME2 DEFAULT GETDATE(),
-    FechaActualizacion DATETIME2 DEFAULT GETDATE(),
+    FechaActualizacion DATETIME2 DEFAULT GETDATE()
 );
-CREATE TABLE ReporteSinRegistro (
-    id INT IDENTITY(1,1) PRIMARY KEY, 
-    [name] NVARCHAR(100) NULL,
-    number NVARCHAR(50) NULL,
-    typePet NVARCHAR(50) NULL,
-    direcction NVARCHAR(150) NULL,
-    addictionalInformation NVARCHAR(500) NULL
-);
-
 
 --MODULO MULTIMEDIA
 CREATE TABLE Multimedia (

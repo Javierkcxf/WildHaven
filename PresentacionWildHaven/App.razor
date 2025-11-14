@@ -1,5 +1,7 @@
 ﻿@page "/"
 @using System.ComponentModel.DataAnnotations
+@using PresentacionWildHaven.Implementacion
+@using PresentacionWildHaven.Interface
 @using PresentacionWildHaven.Models
 @using PresentacionWildHaven.Services
 @using PresentacionWildHaven.Shared
@@ -318,15 +320,19 @@
                         <div class="home-form2">
                             <div class="home-inputs">
                                 <InputText class="home-input" placeholder="Your Name"
-                                    @bind-Value="ReporteActual.name" />
+                                    @bind-Value="ReporteActual.NombreReportante" />
+
                                 <InputText class="home-input" placeholder="Your Number"
-                                    @bind-Value="ReporteActual.number" />
+                                    @bind-Value="ReporteActual.TelefonoReportante" />
+
                                 <InputText class="home-input" placeholder="Type of your Pet"
-                                    @bind-Value="ReporteActual.typePet" />
+                                    @bind-Value="ReporteActual.TipoMascota" />
+
                                 <InputText class="home-input" placeholder="Direcction"
-                                    @bind-Value="ReporteActual.direcction" />
+                                    @bind-Value="ReporteActual.DireccionTexto" />
+
                                 <InputText class="home-input" placeholder="Additional Information"
-                                    @bind-Value="ReporteActual.addictionalInformation" />
+                                    @bind-Value="ReporteActual.InformacionAdicional" />
                             </div>
 
                             <button type="submit" class="home-button11">
@@ -466,10 +472,11 @@
 
 @code {
     [SupplyParameterFromForm]
-    private ReporteSinRegistro ReporteActual { get; set; } = new();
+    private Reporte ReporteActual { get; set; } = new();
+    private ReporteFactorySelector _factorySelector = new ReporteFactorySelector();
     private string textoBotonGuardar = "Send";
 
-    private const string urlBaseApi = "api/reportesinregistro";
+    private const string urlBaseApi = "api/reportes";
     private Toast? toast;
 
     protected override void OnInitialized()
@@ -494,17 +501,20 @@
 
         try
         {
-            var respuesta = await Http.PostAsJsonAsync(urlBaseApi, ReporteActual);
+            var factory = _factorySelector.SeleccionarFactory(ReporteActual);
+            var reporteParaApi = factory.Crear(ReporteActual);
+            var respuesta = await Http.PostAsJsonAsync(urlBaseApi, reporteParaApi);
 
             if (respuesta.IsSuccessStatusCode)
             {
                 await Notificador.MostrarAsync("✅ Reporte creado correctamente.", "success");
-                ReporteActual = new ReporteSinRegistro();
+                ReporteActual = new Reporte();
                 textoBotonGuardar = "Send";
             }
             else
             {
                 var detalle = await respuesta.Content.ReadAsStringAsync();
+                Console.WriteLine(detalle);
                 await Notificador.MostrarAsync("⚠️ No se pudo crear el reporte. Detalle: {detalle}", "warning");
             }
         }
@@ -516,7 +526,7 @@
 
     private void LimpiarFormulario()
     {
-        ReporteActual = new ReporteSinRegistro();
+        ReporteActual = new Reporte();
         textoBotonGuardar = "Send";
     }
 }
