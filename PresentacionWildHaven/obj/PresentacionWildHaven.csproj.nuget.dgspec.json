@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\ASUS\\Desktop\\WildHaven\\PresentacionWildHaven\\PresentacionWildHaven.csproj": {}
+    "C:\\Users\\ASUS\\Desktop\\WildHaven\\PresentacionWildHaven\\PresentacionWildHaven.csproj": {}
   },
   "projects": {
-    "c:\\Users\\ASUS\\Desktop\\WildHaven\\PresentacionWildHaven\\PresentacionWildHaven.csproj": {
+    "C:\\Users\\ASUS\\Desktop\\WildHaven\\PresentacionWildHaven\\PresentacionWildHaven.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\ASUS\\Desktop\\WildHaven\\PresentacionWildHaven\\PresentacionWildHaven.csproj",
+        "projectUniqueName": "C:\\Users\\ASUS\\Desktop\\WildHaven\\PresentacionWildHaven\\PresentacionWildHaven.csproj",
         "projectName": "PresentacionWildHaven",
-        "projectPath": "c:\\Users\\ASUS\\Desktop\\WildHaven\\PresentacionWildHaven\\PresentacionWildHaven.csproj",
+        "projectPath": "C:\\Users\\ASUS\\Desktop\\WildHaven\\PresentacionWildHaven\\PresentacionWildHaven.csproj",
         "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\ASUS\\Desktop\\WildHaven\\PresentacionWildHaven\\obj\\",
+        "outputPath": "C:\\Users\\ASUS\\Desktop\\WildHaven\\PresentacionWildHaven\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
