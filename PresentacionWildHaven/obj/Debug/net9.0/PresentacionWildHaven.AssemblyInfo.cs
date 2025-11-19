@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PresentacionWildHaven")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+53c3d491889fb7079ddf9e84661495f7759ff291")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1273bbfbcbd72afecf3540d1ec46312abdcccff4")]
 [assembly: System.Reflection.AssemblyProductAttribute("PresentacionWildHaven")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PresentacionWildHaven")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

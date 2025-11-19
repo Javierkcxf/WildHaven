@@ -3,7 +3,9 @@
 @using PresentacionWildHaven.Patterns.Observer
 @using PresentacionWildHaven.Services.Notifications
 @inject HttpClient Http
+@inject IJSRuntime JS
 @inject INotificable NotificacionService
+@using System.Net.Http.Headers
 
 <link href="css/style.css" rel="stylesheet" />
 
@@ -118,25 +120,35 @@
         ConfigurarObservadores();
     }
 
-    private async Task CargarEstados()
+private async Task CargarEstados()
+{
+    try
     {
-        try
-        {
-            // ✅ Llamada a tu API genérica: GET /api/EstadosReporte
-            var respuesta = await Http.GetFromJsonAsync<ApiResponse<EstadoReporte>>("api/EstadosReporte");
-            
-            if (respuesta?.Datos != null)
-            {
-                _estadosDisponibles = respuesta.Datos;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error al cargar estados: {ex.Message}");
-            NotificacionService.MostrarError("No se pudieron cargar los estados disponibles");
-        }
-    }
+        // 1. obtener token REAL desde sessionStorage
+        var token = await JS.InvokeAsync<string>("sessionStorage.getItem", "token");
 
+        if (string.IsNullOrEmpty(token))
+        {
+            NotificacionService.MostrarError("Sesión expirada. Inicie sesión nuevamente.");
+            return;
+        }
+
+        // 2. agregar Authorization
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
+        // 3. hacer la petición con token
+        var respuesta = await Http.GetFromJsonAsync<ApiResponse<EstadoReporte>>("api/EstadosReporte");
+
+        if (respuesta?.Datos != null)
+            _estadosDisponibles = respuesta.Datos;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al cargar estados: {ex.Message}");
+        NotificacionService.MostrarError("No se pudieron cargar los estados disponibles");
+    }
+}
     private async Task CargarReporte()
     {
         try

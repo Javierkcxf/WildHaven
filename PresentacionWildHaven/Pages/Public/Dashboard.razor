@@ -1,4 +1,10 @@
 @page "/dashboard"
+@using PresentacionWildHaven.Models
+@using PresentacionWildHaven.Patterns.Observer
+@using PresentacionWildHaven.Services.Notifications
+@inject HttpClient Http
+@inject INotificable NotificacionService
+@using PresentacionWildHaven.Components
 
 <PageTitle>Impact Reports - Dashboard</PageTitle>
 
@@ -28,7 +34,200 @@
         border-radius: 8px !important;
         overflow: hidden !important;
     }
+
+    /* Estilos para la sección de actualización de estado */
+    .update-status-section {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin: 20px 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .update-status-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 20px;
+    }
+
+    .input-group-custom {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        align-items: center;
+    }
+
+    .input-custom {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+    }
+
+    .btn-search {
+        padding: 12px 24px;
+        background: #5a7d5f;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.3s;
+    }
+
+    .btn-search:hover {
+        background: #4a6d4f;
+    }
+
+    .btn-search:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .report-details {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: #555;
+    }
+
+    .detail-value {
+        color: #333;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .status-pending {
+        background: #6c757d;
+        color: white;
+    }
+
+    .status-review {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .status-rescue {
+        background: #dc3545;
+        color: white;
+    }
+
+    .status-attention {
+        background: #ffc107;
+        color: #333;
+    }
+
+    .status-rehabilitation {
+        background: #007bff;
+        color: white;
+    }
+
+    .status-ready {
+        background: #28a745;
+        color: white;
+    }
+
+    .status-released {
+        background: #28a745;
+        color: white;
+    }
+
+    .status-resolved {
+        background: #28a745;
+        color: white;
+    }
+
+    .status-cancelled {
+        background: #343a40;
+        color: white;
+    }
+
+    .status-closed {
+        background: #343a40;
+        color: white;
+    }
+
+    .status-buttons-group {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .btn-status {
+        padding: 10px 20px;
+        border: 2px solid #5a7d5f;
+        background: white;
+        color: #5a7d5f;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+
+    .btn-status:hover:not(:disabled) {
+        background: #5a7d5f;
+        color: white;
+    }
+
+    .btn-status:disabled {
+        border-color: #ccc;
+        color: #ccc;
+        cursor: not-allowed;
+    }
+
+    .btn-status.active {
+        background: #5a7d5f;
+        color: white;
+    }
+
+    .loading-spinner {
+        text-align: center;
+        padding: 20px;
+        color: #5a7d5f;
+    }
+
+    .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 12px;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+
+    .success-message {
+        background: #d4edda;
+        color: #155724;
+        padding: 12px;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
 </style>
+
 <div class="statistics-container10">
     <div class="statistics-statistics">
         <div class="statistics-section1">
@@ -51,6 +250,18 @@
                 <div class="statistics-container13"></div>
                 <span class="statistics-text13">Filter Reports</span>
             </div>
+            <div class="statistics-list4" style="margin-top:30px;">
+                <div class="statistics-container19">
+                    <span class="statistics-text29">Actualizar Estado de Reporte</span>
+                </div>
+
+                <div class="p-3">
+                    <ReporteModal />
+                </div>
+
+                <img src="/images/vector2001558-xel4.svg" class="statistics-vector2008" />
+            </div>
+
             <div class="statistics-list1">
                 <div class="statistics-row1">
                     <div class="statistics-input">
@@ -82,13 +293,20 @@
                     <img src="/images/vector241558-s7a7.svg" alt="Vector241558" class="statistics-vector24" />
                     <img src="/images/vector251558-xk6.svg" alt="Vector251558" class="statistics-vector25" />
                     <img src="/images/vector231558-hf0a.svg" alt="Vector231558" class="statistics-vector23" />
-                    <img src="/images/rectangle41301558-88sg-200w.png" alt="Rectangle41301558" class="statistics-rectangle4130" />
-                    <img src="/images/rectangle41311558-ltg-200w.png" alt="Rectangle41311558" class="statistics-rectangle4131" />
-                    <img src="/images/rectangle41321558-u38a-200w.png" alt="Rectangle41321558" class="statistics-rectangle4132" />
-                    <img src="/images/rectangle41331558-f1bu-200w.png" alt="Rectangle41331558" class="statistics-rectangle4133" />
-                    <img src="/images/rectangle41341558-8nkb-200w.png" alt="Rectangle41341558" class="statistics-rectangle4134" />
-                    <img src="/images/rectangle41351558-qfe-200w.png" alt="Rectangle41351558" class="statistics-rectangle4135" />
-                    <img src="/images/rectangle41361558-jhkj-200w.png" alt="Rectangle41361558" class="statistics-rectangle4136" />
+                    <img src="/images/rectangle41301558-88sg-200w.png" alt="Rectangle41301558"
+                        class="statistics-rectangle4130" />
+                    <img src="/images/rectangle41311558-ltg-200w.png" alt="Rectangle41311558"
+                        class="statistics-rectangle4131" />
+                    <img src="/images/rectangle41321558-u38a-200w.png" alt="Rectangle41321558"
+                        class="statistics-rectangle4132" />
+                    <img src="/images/rectangle41331558-f1bu-200w.png" alt="Rectangle41331558"
+                        class="statistics-rectangle4133" />
+                    <img src="/images/rectangle41341558-8nkb-200w.png" alt="Rectangle41341558"
+                        class="statistics-rectangle4134" />
+                    <img src="/images/rectangle41351558-qfe-200w.png" alt="Rectangle41351558"
+                        class="statistics-rectangle4135" />
+                    <img src="/images/rectangle41361558-jhkj-200w.png" alt="Rectangle41361558"
+                        class="statistics-rectangle4136" />
                 </div>
                 <span class="statistics-text20">Month</span>
             </div>
@@ -145,7 +363,8 @@
                                 <span class="statistics-text32">@report.Year</span>
                             </div>
                             <span class="statistics-text33">
-                                Admissions: @report.Admissions, Releases: @report.Releases, Success Rate: @report.SuccessRate%
+                                Admissions: @report.Admissions, Releases: @report.Releases, Success Rate:
+                                @report.SuccessRate%
                             </span>
                             <img src="/images/vector2001558-9c26.svg" alt="Vector2001558" class="statistics-vector2005" />
                         </div>
@@ -170,11 +389,11 @@
     private int successRate = 80;
 
     private List<MonthlyReport> monthlyReports = new List<MonthlyReport>
-    {
-        new MonthlyReport { Month = "January", Year = "2019", Admissions = 30, Releases = 25, SuccessRate = 83 },
-        new MonthlyReport { Month = "February", Year = "2019", Admissions = 20, Releases = 18, SuccessRate = 90 },
-        new MonthlyReport { Month = "March", Year = "2019", Admissions = 25, Releases = 20, SuccessRate = 80 }
-    };
+{
+new MonthlyReport { Month = "January", Year = "2019", Admissions = 30, Releases = 25, SuccessRate = 83 },
+new MonthlyReport { Month = "February", Year = "2019", Admissions = 20, Releases = 18, SuccessRate = 90 },
+new MonthlyReport { Month = "March", Year = "2019", Admissions = 25, Releases = 20, SuccessRate = 80 }
+};
 
     private void ExportPDF()
     {
