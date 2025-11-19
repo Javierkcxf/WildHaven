@@ -1,0 +1,7 @@
+User-agent: Googlebot
+Disallow: /nogooglebot/
+
+User-agent: *
+Allow: /
+
+Sitemap: https://landing-page-collection-community-37p8df.teleporthq.app/sitemap.xml

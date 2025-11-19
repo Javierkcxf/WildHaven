@@ -1,0 +1,131 @@
+@page "/fast-report"
+@using System.ComponentModel.DataAnnotations
+@using PresentacionWildHaven.Implementacion
+@using PresentacionWildHaven.Interface
+@using PresentacionWildHaven.Models
+@using PresentacionWildHaven.Services
+@using PresentacionWildHaven.Shared
+@inherits LayoutComponentBase
+@inject ToastService Notificador
+@inject HttpClient Http
+
+<link href="css/style.css" rel="stylesheet" />
+<link href="css/index.css" rel="stylesheet" />
+
+<div class="create-report">
+<header class="header">
+    <NavLink href="/">
+        <img alt="BeigeandGreyModernPawIconPetStoreLogo111510"
+            src="/images/beigeandgreymodernpawiconpetstorelogo111510-rg-200h.png" 
+            class="home-logo" />
+    </NavLink>
+</header>
+
+        <EditForm Model="@ReporteActual" OnValidSubmit="@CrearReporte">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="home-form1">
+                <div class="home-doctor-card">
+                    <div class="home-form2">
+                        <div class="home-inputs">
+                            <InputText class="home-input" placeholder="Your Name"
+                                @bind-Value="ReporteActual.NombreReportante" />
+
+                            <InputText class="home-input" placeholder="Your Number"
+                                @bind-Value="ReporteActual.TelefonoReportante" />
+
+                            <InputText class="home-input" placeholder="Type of your Pet"
+                                @bind-Value="ReporteActual.TipoMascota" />
+
+                            <InputText class="home-input" placeholder="Direcction"
+                                @bind-Value="ReporteActual.DireccionTexto" />
+
+                            <InputText class="home-input" placeholder="Additional Information"
+                                @bind-Value="ReporteActual.InformacionAdicional" />
+                        </div>
+
+                        <button type="submit" class="home-button11">
+                            <span class="home-text38">@textoBotonGuardar</span>
+                        </button>
+
+                    </div>
+                    <div class="home-titles">
+                        <span class="home-text39">
+                            <span>Quick Report Form</span><br /><br />
+                            <span>Help us save animals in dangerous situations</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+
+    <footer class="footer">
+        <p>© 2023 Our Platform. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="/privacy-policy">Privacy Policy</a>
+            <a href="/terms-of-service">Terms of Service</a>
+        </div>
+    </footer>
+</div>
+<Toast @ref="toast" />
+
+@code {
+    [SupplyParameterFromForm]
+    private Reporte ReporteActual { get; set; } = new();
+    private ReporteFactorySelector _factorySelector = new ReporteFactorySelector();
+    private string textoBotonGuardar = "Send";
+
+    private const string urlBaseApi = "api/reportes";
+    private Toast? toast;
+
+    protected override void OnInitialized()
+    {
+        Notificador.OnShow += MostrarToast;
+    }
+
+    private async Task MostrarToast(string mensaje, string tipo)
+    {
+        if (toast != null)
+        {
+            await toast.MostrarAsync(mensaje, tipo);
+        }
+    }
+
+    public void Dispose()
+    {
+        Notificador.OnShow -= MostrarToast;
+    }
+    private async Task CrearReporte()
+    {
+
+        try
+        {
+            var factory = _factorySelector.SeleccionarFactory(ReporteActual);
+            var reporteParaApi = factory.Crear(ReporteActual);
+            var respuesta = await Http.PostAsJsonAsync(urlBaseApi, reporteParaApi);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                await Notificador.MostrarAsync("✅ Reporte creado correctamente.", "success");
+                ReporteActual = new Reporte();
+                textoBotonGuardar = "Send";
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                await Notificador.MostrarAsync("⚠️ No se pudo crear el reporte. Detalle: {detalle}", "warning");
+            }
+        }
+        catch (Exception error)
+        {
+            await Notificador.MostrarAsync($"❌ Error al crear reporte: {error.Message}", "error");
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        ReporteActual = new Reporte();
+        textoBotonGuardar = "Send";
+    }
+}

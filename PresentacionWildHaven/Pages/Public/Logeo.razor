@@ -1,0 +1,252 @@
+@page "/login"
+@using PresentacionWildHaven.Models.DTOs
+@using PresentacionWildHaven.Services.Auth
+@using PresentacionWildHaven.Services.Notifications
+@using PresentacionWildHaven.Services
+@using PresentacionWildHaven.Models
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject INotificable NotificacionService
+@inject ServicioApiGenerico servicioApi
+@inject SesionService SesionService
+@inject ServicioAutenticacion servicioAuth
+@using System.Text.Json.Serialization
+
+
+
+<div class="login-container">
+<header class="top-bar">
+    <NavLink href="/" style="text-decoration: none; color: inherit;">
+        <span class="brand-name">Wild Haven</span>
+    </NavLink>
+</header>
+
+    <div class="form-section">
+        <div class="form-header">
+            <h1 class="form-title">Login</h1>
+            <p class="form-subtitle">Please enter your credentials:</p>
+        </div>
+
+        <EditForm Model="@_credenciales" OnValidSubmit="@IniciarSesion">
+            <DataAnnotationsValidator />
+
+            <div class="form-inputs">
+                <div class="input-group">
+                    <label class="input-label">Email or Username</label>
+                    <div class="input-field">
+                        <InputText @bind-Value="_credenciales.Email" placeholder="Enter your email or username"
+                            class="text-input" />
+                    </div>
+                    <span class="input-hint">💌</span>
+                    <ValidationMessage For="@(() => _credenciales.Email)" class="validation-error" />
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Password</label>
+                    <div class="input-field">
+                        <InputText type="password" @bind-Value="_credenciales.Password"
+                            placeholder="Enter your password" class="text-input" />
+                    </div>
+                    <span class="input-hint">🔒</span>
+                    <ValidationMessage For="@(() => _credenciales.Password)" class="validation-error" />
+                </div>
+
+                <div class="selection-group">
+                    <label class="input-label">Remember Me</label>
+                    <div class="chip-container">
+                        <label class="chip">
+                            <InputCheckbox @bind-Value="_credenciales.RememberMe" />
+                            <span>Check to remember my login</span>
+                        </label>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_mensaje))
+                {
+                    <div class="alert @_claseAviso">
+                        <i class="bi @_iconoMensaje"></i>
+                        @_mensaje
+                    </div>
+                }
+
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" @onclick="OlvidoPassword">
+                        Forgot your password?
+                    </button>
+                    <button type="submit" class="btn-primary" disabled="@_cargando">
+                        @if (_cargando)
+                        {
+                            <span>Loading...</span>
+                        }
+                        else
+                        {
+                            <span>Log In</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+
+    <div class="divider"></div>
+
+    <footer class="footer-section">
+        <div class="footer-links">
+            <a href="/privacy-policy">Privacy Policy</a>
+            <a href="/terms-of-service">Terms of Service</a>
+        </div>
+    </footer>
+</div>
+
+@code {
+    private Credenciales _credenciales = new();
+    private string _mensaje = "";
+    private string _claseAviso = "alert-info";
+    private string _iconoMensaje = "bi-info-circle";
+    private bool _cargando = false;
+    private async Task IniciarSesion()
+    {
+        //javiertorresm100506@gmail.com
+        //Javiertorres2020@
+        try
+        {
+            _cargando = true;
+            MostrarMensaje("Verificando credenciales...", "info");
+
+            // ✅ 1. Obtener TOKEN JWT usando tu endpoint de autenticación
+            var datosToken = new
+            {
+                tabla = "Usuarios",
+                campoUsuario = "Email",
+                campoContrasena = "PasswordHash", // Nombre exacto de tu columna en BD
+                usuario = _credenciales.Email,
+                contrasena = _credenciales.Password
+            };
+
+            var resultado = await servicioApi.PostAsync<RespuestaToken>("api/Autenticacion/token", datosToken);
+
+
+           if (resultado == null || string.IsNullOrEmpty(resultado.Token))
+            {
+                MostrarMensaje("No se recibió un token válido del servidor", "warning");
+                return;
+            }
+            await servicioAuth.IniciarSesionAsync(resultado.Token, _credenciales.Email);
+
+           try
+            {
+                // Obtener todos los rol_usuario y filtrar por email
+                var todosRolUsuario = await servicioApi.ObtenerTodosAsync<RolUsuario>("rolusuario");
+                var rolesDelUsuario = todosRolUsuario?.Where(ru => ru.EmailUsuario == _credenciales.Email).ToList();
+
+                if (rolesDelUsuario != null && rolesDelUsuario.Count > 0)
+                {
+                    // Obtener todos los roles
+                    var todosRoles = await servicioApi.ObtenerTodosAsync<Roles>("Roles");
+
+                    // Obtener nombres de los roles del usuario
+                    var nombresRolesUsuario = rolesDelUsuario
+                        .Select(ru => todosRoles?.FirstOrDefault(r => r.RolID == ru.IdRol)?.Nombre)
+                        .Where(nombre => !string.IsNullOrEmpty(nombre))
+                        .ToList();
+
+                    if (nombresRolesUsuario.Count > 0)
+                    {
+                        // Obtener TODAS las rutasrol y filtrar por TODOS los roles del usuario
+                        var todasRutasRol = await servicioApi.ObtenerTodosAsync<RutaRol>("rutarol");
+                        var rutasDelUsuario = todasRutasRol?
+                            .Where(rr => nombresRolesUsuario.Contains(rr.NombreRol))
+                            .Distinct()
+                            .ToList();
+
+                        if (rutasDelUsuario != null && rutasDelUsuario.Count > 0)
+                        {
+                            await servicioAuth.GuardarRutasRolAsync(rutasDelUsuario);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Si falla cargar permisos, continuar igual
+            }
+
+            MostrarMensaje("¡Inicio de sesión exitoso! Redirigiendo...", "success");
+            await Task.Delay(1500);
+            NavManager.NavigateTo("/dashboard", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            MostrarMensaje($"Error: {ex.Message}", "danger");
+        }
+        finally
+        {
+           _cargando = false;
+        }
+    }
+
+
+    private void OlvidoPassword()
+    {
+        NavManager.NavigateTo("/recuperar-password");
+    }
+
+    private void MostrarMensaje(string texto, string tipo)
+    {
+        _mensaje = texto;
+        _claseAviso = tipo switch
+        {
+            "success" => "alert-success",
+            "danger" => "alert-danger",
+            "warning" => "alert-warning",
+            _ => "alert-info"
+        };
+        _iconoMensaje = tipo switch
+        {
+            "success" => "bi-check-circle-fill",
+            "danger" => "bi-exclamation-triangle-fill",
+            "warning" => "bi-exclamation-circle-fill",
+            _ => "bi-info-circle-fill"
+        };
+    }
+
+    // Modelos
+    public class Credenciales
+    {
+        [Required(ErrorMessage = "Email is required")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "Password is required")]
+        public string Password { get; set; } = "";
+
+        public bool RememberMe { get; set; }
+    }
+    private class RespuestaToken
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("estado")]
+        public int Estado { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("mensaje")]
+        public string? Mensaje { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("usuario")]
+        public string? Usuario { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("token")]
+        public string? Token { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("expiracion")]
+        public DateTime? Expiracion { get; set; }
+    }
+
+
+    private class RespuestaLogin
+    {
+        public bool Autenticado { get; set; }
+    }
+
+    private class ApiResponse<T>
+    {
+        public List<T> Datos { get; set; } = new();
+    }
+}

@@ -1,148 +1,511 @@
+// --------------------------------------------------------------
+// Archivo: RepositorioConsultasSqlServer.cs 
+// Ruta: webapicsharp/Repositorios/RepositorioConsultasSqlServer.cs
+// Mejora: Manejo inteligente de DateTime con hora 00:00:00 como DATE
+//         EN CONSULTAS Y PROCEDIMIENTOS ALMACENADOS
+// --------------------------------------------------------------
 
-using System;                                          
-using System.Collections.Generic;                      
-using System.Threading.Tasks;                          
-using System.Data;                                     
-using Microsoft.Data.SqlClient;                       
-using webapicsharp.Repositorios.Abstracciones;        
-using webapicsharp.Servicios.Abstracciones;           
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
+using webapicsharp.Repositorios.Abstracciones;
+using webapicsharp.Servicios.Abstracciones;
 
 namespace webapicsharp.Repositorios
 {
-
-    public class RepositorioConsultasSqlServer : IRepositorioConsultas
+    /// <summary>
+    /// Implementación de repositorio para ejecutar consultas y procedimientos almacenados en SQL Server.
+    /// 
+    /// MEJORA IMPLEMENTADA:
+    /// Detecta DateTime con hora 00:00:00 y los convierte a DateOnly automáticamente
+    /// tanto en consultas como en procedimientos almacenados.
+    /// </summary>
+    public sealed class RepositorioConsultasSqlServer : IRepositorioConsultas
     {
-
         private readonly IProveedorConexion _proveedorConexion;
 
         public RepositorioConsultasSqlServer(IProveedorConexion proveedorConexion)
         {
-            _proveedorConexion = proveedorConexion ?? throw new ArgumentNullException(
-                nameof(proveedorConexion),
-                "IProveedorConexion no puede ser null. Verificar registro en Program.cs."
-            );
+            _proveedorConexion = proveedorConexion ?? throw new ArgumentNullException(nameof(proveedorConexion));
         }
 
+        // ================================================================
+        // MÉTODO AUXILIAR: Mapea tipos de datos de SQL Server a SqlDbType
+        // ================================================================
+        private SqlDbType MapearTipo(string tipo)
+        {
+            return tipo.ToLower() switch
+            {
+                "varchar" => SqlDbType.VarChar,
+                "nvarchar" => SqlDbType.NVarChar,
+                "char" => SqlDbType.Char,
+                "nchar" => SqlDbType.NChar,
+                "text" => SqlDbType.Text,
+                "ntext" => SqlDbType.NText,
+                "int" => SqlDbType.Int,
+                "bigint" => SqlDbType.BigInt,
+                "smallint" => SqlDbType.SmallInt,
+                "tinyint" => SqlDbType.TinyInt,
+                "bit" => SqlDbType.Bit,
+                "decimal" => SqlDbType.Decimal,
+                "numeric" => SqlDbType.Decimal,
+                "money" => SqlDbType.Money,
+                "smallmoney" => SqlDbType.SmallMoney,
+                "float" => SqlDbType.Float,
+                "real" => SqlDbType.Real,
+                "datetime" => SqlDbType.DateTime,
+                "datetime2" => SqlDbType.DateTime2,
+                "smalldatetime" => SqlDbType.SmallDateTime,
+                "date" => SqlDbType.Date,
+                "time" => SqlDbType.Time,
+                "datetimeoffset" => SqlDbType.DateTimeOffset,
+                "uniqueidentifier" => SqlDbType.UniqueIdentifier,
+                "binary" => SqlDbType.Binary,
+                "varbinary" => SqlDbType.VarBinary,
+                "image" => SqlDbType.Image,
+                "xml" => SqlDbType.Xml,
+                _ => SqlDbType.NVarChar
+            };
+        }
+
+        // ================================================================
+        // MÉTODO AUXILIAR: Obtiene metadatos de parámetros de un SP en SQL Server
+        // ================================================================
+        private async Task<List<(string Nombre, bool EsOutput, string Tipo, int? MaxLength)>> ObtenerMetadatosParametrosAsync(
+            SqlConnection conexion,
+            string nombreSP)
+        {
+            var lista = new List<(string, bool, string, int?)>();
+
+            string sql = @"
+                SELECT 
+                    PARAMETER_NAME,
+                    CASE WHEN PARAMETER_MODE = 'OUT' OR PARAMETER_MODE = 'INOUT' THEN 1 ELSE 0 END AS IsOutput,
+                    DATA_TYPE,
+                    CHARACTER_MAXIMUM_LENGTH
+                FROM INFORMATION_SCHEMA.PARAMETERS
+                WHERE SPECIFIC_NAME = @spName
+                ORDER BY ORDINAL_POSITION;";
+
+            await using var comando = new SqlCommand(sql, conexion);
+            comando.Parameters.AddWithValue("@spName", nombreSP);
+
+            await using var reader = await comando.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                string nombre = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+                bool esOutput = reader.IsDBNull(1) ? false : reader.GetInt32(1) == 1;
+                string tipo = reader.IsDBNull(2) ? "nvarchar" : reader.GetString(2);
+                int? maxLength = reader.IsDBNull(3) ? null : reader.GetInt32(3);
+
+                lista.Add((nombre, esOutput, tipo, maxLength));
+            }
+
+            return lista;
+        }
+
+        // ================================================================
+        // MÉTODO PRINCIPAL MEJORADO: Ejecuta un procedimiento almacenado genérico
+        // MEJORA CRÍTICA: Ahora convierte DateTime con hora 00:00:00 a Date
+        // ================================================================
+
+// ================================================================
+// MÉTODO PRINCIPAL MEJORADO: Ejecuta un procedimiento almacenado genérico
+// MEJORA CRÍTICA: Ahora convierte DateTime con hora 00:00:00 a Date
+// DETECTA SI ES FUNCTION O PROCEDURE
+// ================================================================
+public async Task<DataTable> EjecutarProcedimientoAlmacenadoConDictionaryAsync(
+    string nombreSP,
+    Dictionary<string, object?> parametros)
+{
+    if (string.IsNullOrWhiteSpace(nombreSP))
+        throw new ArgumentException("El nombre del procedimiento no puede estar vacío.");
+
+    string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
+    await using var conexion = new SqlConnection(cadenaConexion);
+    await conexion.OpenAsync();
+
+    // Detectar si es FUNCTION o PROCEDURE
+    string sqlTipo = "SELECT ROUTINE_TYPE FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_NAME = @spName";
+    string tipoRutina = "PROCEDURE";
+    await using (var cmdTipo = new SqlCommand(sqlTipo, conexion))
+    {
+        cmdTipo.Parameters.AddWithValue("@spName", nombreSP);
+        var resultado = await cmdTipo.ExecuteScalarAsync();
+        tipoRutina = resultado?.ToString() ?? "PROCEDURE";
+    }
+
+    var metadatos = await ObtenerMetadatosParametrosAsync(conexion, nombreSP);
+
+    var parametrosNormalizados = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+    foreach (var kv in parametros ?? new Dictionary<string, object?>())
+    {
+        var clave = kv.Key.StartsWith("@") ? kv.Key.Substring(1) : kv.Key;
+        parametrosNormalizados[clave] = kv.Value;
+    }
+
+    var tabla = new DataTable();
+
+    // Procesar según el tipo de rutina
+    if (tipoRutina == "FUNCTION")
+    {
+        // ============================================================
+        // MANEJO DE FUNCIONES
+        // ============================================================
+        var parametrosEntrada = metadatos.Where(m => !m.EsOutput).ToList();
+        var parametrosQuery = string.Join(", ", parametrosEntrada.Select((_, i) => $"@p{i}"));
+        var sqlLlamada = $"SELECT dbo.{nombreSP}({parametrosQuery}) AS Resultado";
+        
+        await using var comando = new SqlCommand(sqlLlamada, conexion);
+        comando.CommandType = CommandType.Text;
+        comando.CommandTimeout = 300;
+
+        // Agregar parámetros con nombres @p0, @p1, etc.
+        for (int i = 0; i < parametrosEntrada.Count; i++)
+        {
+            var meta = parametrosEntrada[i];
+            string clave = meta.Nombre.StartsWith("@") ? meta.Nombre.Substring(1) : meta.Nombre;
+            object valor = parametrosNormalizados.TryGetValue(clave, out var v) && v != null ? v : DBNull.Value;
+
+            // ============================================================
+            // MEJORA: Detección de JSON de 3 formas (como PostgreSQL)
+            // ============================================================
+            bool esJSON = meta.Tipo.ToLower() == "nvarchar" && meta.MaxLength == -1;
+
+            if (!esJSON && valor is string sValor && !string.IsNullOrWhiteSpace(sValor))
+            {
+                var nombreParam = meta.Nombre?.ToLower() ?? "";
+                var sValorTrim = sValor.TrimStart();
+
+                if (sValorTrim.StartsWith("{") || sValorTrim.StartsWith("["))
+                {
+                    esJSON = true;
+                }
+                else if (nombreParam.Contains("roles") || nombreParam.Contains("detalles") ||
+                         nombreParam.Contains("json") || nombreParam.Contains("data"))
+                {
+                    if (sValorTrim.StartsWith("{") || sValorTrim.StartsWith("["))
+                    {
+                        esJSON = true;
+                    }
+                }
+            }
+
+            if (esJSON)
+            {
+                var param = new SqlParameter($"@p{i}", SqlDbType.NVarChar) { Value = valor == DBNull.Value ? DBNull.Value : valor.ToString() };
+                param.Size = -1;
+                comando.Parameters.Add(param);
+            }
+            // ============================================================
+            // MEJORA: VARCHAR/NVARCHAR - Convertir a string (como PostgreSQL)
+            // ============================================================
+            else if ((meta.Tipo.ToLower() == "varchar" || meta.Tipo.ToLower() == "nvarchar" || meta.Tipo.ToLower() == "char" || meta.Tipo.ToLower() == "nchar")
+                     && valor != DBNull.Value)
+            {
+                string valorStr = valor.ToString() ?? string.Empty;
+                var param = new SqlParameter($"@p{i}", MapearTipo(meta.Tipo)) { Value = valorStr };
+                if (meta.MaxLength.HasValue && meta.MaxLength.Value > 0)
+                    param.Size = meta.MaxLength.Value;
+                comando.Parameters.Add(param);
+            }
+            else if (valor is DateTime dt && dt.TimeOfDay == TimeSpan.Zero && meta.Tipo.ToLower() == "date")
+            {
+                comando.Parameters.Add(new SqlParameter($"@p{i}", SqlDbType.Date) { Value = DateOnly.FromDateTime(dt) });
+            }
+            else if (meta.Tipo.ToLower() == "int" && valor != DBNull.Value)
+            {
+                comando.Parameters.Add(new SqlParameter($"@p{i}", SqlDbType.Int) { Value = Convert.ToInt32(valor) });
+            }
+            else if (meta.Tipo.ToLower() == "bigint" && valor != DBNull.Value)
+            {
+                comando.Parameters.Add(new SqlParameter($"@p{i}", SqlDbType.BigInt) { Value = Convert.ToInt64(valor) });
+            }
+            else if ((meta.Tipo.ToLower() == "decimal" || meta.Tipo.ToLower() == "numeric") && valor != DBNull.Value)
+            {
+                comando.Parameters.Add(new SqlParameter($"@p{i}", SqlDbType.Decimal) { Value = Convert.ToDecimal(valor) });
+            }
+            else if (meta.Tipo.ToLower() == "bit" && valor != DBNull.Value)
+            {
+                comando.Parameters.Add(new SqlParameter($"@p{i}", SqlDbType.Bit) { Value = Convert.ToBoolean(valor) });
+            }
+            else
+            {
+                var param = new SqlParameter($"@p{i}", MapearTipo(meta.Tipo)) { Value = valor };
+                if (meta.MaxLength.HasValue && meta.MaxLength.Value > 0)
+                    param.Size = meta.MaxLength.Value;
+                comando.Parameters.Add(param);
+            }
+        }
+
+        await using var reader = await comando.ExecuteReaderAsync();
+        tabla.Load(reader);
+    }
+    else
+    {
+        // ============================================================
+        // MANEJO DE PROCEDIMIENTOS
+        // ============================================================
+        await using var comando = new SqlCommand(nombreSP, conexion);
+        comando.CommandType = CommandType.StoredProcedure;
+        comando.CommandTimeout = 300;
+
+        foreach (var meta in metadatos)
+        {
+            string clave = meta.Nombre.StartsWith("@") ? meta.Nombre.Substring(1) : meta.Nombre;
+            var sqlDbTipo = MapearTipo(meta.Tipo);
+
+            if (!meta.EsOutput)
+            {
+                object valor = parametrosNormalizados.TryGetValue(clave, out var v) && v != null
+                    ? v
+                    : DBNull.Value;
+
+                // ============================================================
+                // MEJORA: Detección de JSON de 3 formas (como PostgreSQL)
+                // 1. Por tipo (nvarchar(max) es el tipo JSON en SQL Server)
+                // 2. Por contenido (empieza con { o [)
+                // 3. Por nombre común de parámetro JSON
+                // ============================================================
+                bool esJSON = meta.Tipo.ToLower() == "nvarchar" && meta.MaxLength == -1; // nvarchar(max)
+
+                if (!esJSON && valor is string sValor && !string.IsNullOrWhiteSpace(sValor))
+                {
+                    var nombreParam = meta.Nombre?.ToLower() ?? "";
+                    var sValorTrim = sValor.TrimStart();
+
+                    // Detectar por contenido
+                    if (sValorTrim.StartsWith("{") || sValorTrim.StartsWith("["))
+                    {
+                        esJSON = true;
+                    }
+                    // Detectar por nombre común de parámetros JSON
+                    else if (nombreParam.Contains("roles") || nombreParam.Contains("detalles") ||
+                             nombreParam.Contains("json") || nombreParam.Contains("data"))
+                    {
+                        if (sValorTrim.StartsWith("{") || sValorTrim.StartsWith("["))
+                        {
+                            esJSON = true;
+                        }
+                    }
+                }
+
+                if (esJSON)
+                {
+                    // Tratar como JSON (NVARCHAR(MAX))
+                    var param = new SqlParameter($"@{clave}", SqlDbType.NVarChar)
+                    {
+                        Direction = ParameterDirection.Input,
+                        Value = valor == DBNull.Value ? DBNull.Value : valor.ToString()
+                    };
+                    param.Size = -1; // -1 indica MAX
+                    comando.Parameters.Add(param);
+                }
+                // ============================================================
+                // MEJORA: VARCHAR/NVARCHAR - Convertir a string si no lo es
+                // Resuelve el caso de Int32 enviado como contraseña (como PostgreSQL)
+                // ============================================================
+                else if ((meta.Tipo.ToLower() == "varchar" || meta.Tipo.ToLower() == "nvarchar" || meta.Tipo.ToLower() == "char" || meta.Tipo.ToLower() == "nchar")
+                         && valor != DBNull.Value)
+                {
+                    string valorStr = valor.ToString() ?? string.Empty;
+                    var param = new SqlParameter($"@{clave}", MapearTipo(meta.Tipo))
+                    {
+                        Direction = ParameterDirection.Input,
+                        Value = valorStr
+                    };
+                    if (meta.MaxLength.HasValue && meta.MaxLength.Value > 0)
+                        param.Size = meta.MaxLength.Value;
+                    comando.Parameters.Add(param);
+                }
+                else if (valor is DateTime dt && dt.TimeOfDay == TimeSpan.Zero && meta.Tipo.ToLower() == "date")
+                {
+                    var param = new SqlParameter($"@{clave}", SqlDbType.Date)
+                    {
+                        Direction = ParameterDirection.Input,
+                        Value = DateOnly.FromDateTime(dt)
+                    };
+                    comando.Parameters.Add(param);
+                }
+                else if (meta.Tipo.ToLower() == "int" && valor != DBNull.Value)
+                {
+                    int valorInt = Convert.ToInt32(valor);
+                    var param = new SqlParameter($"@{clave}", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Input,
+                        Value = valorInt
+                    };
+                    comando.Parameters.Add(param);
+                }
+                else if (meta.Tipo.ToLower() == "bigint" && valor != DBNull.Value)
+                {
+                    long valorLong = Convert.ToInt64(valor);
+                    var param = new SqlParameter($"@{clave}", SqlDbType.BigInt)
+                    {
+                        Direction = ParameterDirection.Input,
+                        Value = valorLong
+                    };
+                    comando.Parameters.Add(param);
+                }
+                else if ((meta.Tipo.ToLower() == "decimal" || meta.Tipo.ToLower() == "numeric") && valor != DBNull.Value)
+                {
+                    decimal valorDec = Convert.ToDecimal(valor);
+                    var param = new SqlParameter($"@{clave}", SqlDbType.Decimal)
+                    {
+                        Direction = ParameterDirection.Input,
+                        Value = valorDec
+                    };
+                    comando.Parameters.Add(param);
+                }
+                else if (meta.Tipo.ToLower() == "bit" && valor != DBNull.Value)
+                {
+                    bool valorBool = Convert.ToBoolean(valor);
+                    var param = new SqlParameter($"@{clave}", SqlDbType.Bit)
+                    {
+                        Direction = ParameterDirection.Input,
+                        Value = valorBool
+                    };
+                    comando.Parameters.Add(param);
+                }
+                else
+                {
+                    var param = new SqlParameter($"@{clave}", sqlDbTipo)
+                    {
+                        Direction = ParameterDirection.Input,
+                        Value = valor
+                    };
+
+                    if (meta.MaxLength.HasValue && meta.MaxLength.Value > 0)
+                        param.Size = meta.MaxLength.Value;
+
+                    comando.Parameters.Add(param);
+                }
+            }
+            else
+            {
+                var param = new SqlParameter($"@{clave}", sqlDbTipo)
+                {
+                    Direction = ParameterDirection.Output
+                };
+
+                if (meta.MaxLength.HasValue && meta.MaxLength.Value > 0)
+                    param.Size = meta.MaxLength.Value;
+
+                comando.Parameters.Add(param);
+            }
+        }
+
+        try
+        {
+            await using var reader = await comando.ExecuteReaderAsync();
+            tabla.Load(reader);
+        }
+        catch
+        {
+            await comando.ExecuteNonQueryAsync();
+        }
+
+        foreach (SqlParameter param in comando.Parameters)
+        {
+            if (param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput)
+            {
+                if (!tabla.Columns.Contains(param.ParameterName))
+                    tabla.Columns.Add(param.ParameterName);
+
+                if (tabla.Rows.Count == 0)
+                    tabla.Rows.Add(tabla.NewRow());
+
+                tabla.Rows[0][param.ParameterName] = param.Value == null ? DBNull.Value : param.Value;
+            }
+        }
+    }
+
+    return tabla;
+}
+
+
+        // ================================================================
+        // MÉTODO MEJORADO: Ejecuta una consulta SQL parametrizada
+        // MEJORA: Convierte DateTime con hora 00:00:00 a Date
+        // ================================================================
         public async Task<DataTable> EjecutarConsultaParametrizadaConDictionaryAsync(
             string consultaSQL,
             Dictionary<string, object?> parametros,
             int maximoRegistros = 10000,
-            string? esquema = null
-        )
+            string? esquema = null)
         {
+            var tabla = new DataTable();
+            string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
+            await using var conexion = new SqlConnection(cadenaConexion);
+            await conexion.OpenAsync();
+            await using var comando = new SqlCommand(consultaSQL, conexion);
 
-            if (string.IsNullOrWhiteSpace(consultaSQL))
-                throw new ArgumentException(
-                    "La consulta SQL no puede estar vacía.",
-                    nameof(consultaSQL)
-                );
-
-            if (maximoRegistros <= 0)
-                throw new ArgumentException(
-                    "El máximo de registros debe ser mayor a cero.",
-                    nameof(maximoRegistros)
-                );
-
-            var dataTable = new DataTable();
-
-            try
+            foreach (var p in parametros ?? new Dictionary<string, object?>())
             {
+                string nombreParam = p.Key.StartsWith("@") ? p.Key : $"@{p.Key}";
+                object? valor = p.Value ?? DBNull.Value;
 
-                string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
-
-                using var conexion = new SqlConnection(cadenaConexion);
-                await conexion.OpenAsync();
-
-                using var comando = new SqlCommand(consultaSQL, conexion);
-                comando.CommandTimeout = 30; 
-
-                AgregarParametrosDictionary(comando, parametros ?? new Dictionary<string, object?>());
-
-                using var lector = await comando.ExecuteReaderAsync();
-                dataTable.Load(lector); 
-
-                if (dataTable.Rows.Count > maximoRegistros)
+                // MEJORA CRÍTICA: Detectar DateTime con hora 00:00:00
+                if (valor is DateTime dt && dt.TimeOfDay == TimeSpan.Zero)
                 {
-                    System.Diagnostics.Debug.WriteLine(
-                        $"Advertencia SQL Server: Consulta retornó {dataTable.Rows.Count} registros, límite esperado era {maximoRegistros}. " +
-                        $"Consulta: {TruncarConsultaParaLog(consultaSQL)}"
-                    );
+                    // Si la hora es 00:00:00, probablemente es una fecha sin hora
+                    // Convertir a Date para que SQL Server lo trate como DATE
+                    // Esto evita problemas de comparación con columnas tipo DATE
+                    comando.Parameters.Add(new SqlParameter(nombreParam, SqlDbType.Date)
+                    {
+                        Value = DateOnly.FromDateTime(dt)
+                    });
                 }
-
-                return dataTable;
-            }
-            catch (SqlException sqlEx)
-            {
-
-                string mensajeError = sqlEx.Number switch
+                else
                 {
-                    2 => "Timeout: La consulta tardó demasiado en ejecutarse",
-                    207 => "Nombre de columna inválido en la consulta SQL",
-                    208 => "Tabla o vista especificada no existe en la base de datos",
-                    102 => "Error de sintaxis en la consulta SQL",
-                    515 => "Valor null no permitido en columna que no acepta nulls",
-                    547 => "Violación de restricción de clave foránea",
-                    2812 => "Procedimiento almacenado no encontrado",
-                    8152 => "String or binary data would be truncated (datos demasiado largos)",
-                    2146 => "Error de conversión de tipos de datos",
-                    _ => $"Error SQL Server (Código {sqlEx.Number}): {sqlEx.Message}"
-                };
-
-                throw new InvalidOperationException(
-                    $"Error al ejecutar consulta SQL: {mensajeError}. Consulta: {TruncarConsultaParaLog(consultaSQL)}",
-                    sqlEx
-                );
+                    // Caso normal: dejar que AddWithValue infiera el tipo
+                    comando.Parameters.AddWithValue(nombreParam, valor);
+                }
             }
-            catch (InvalidOperationException)
-            {
 
-                throw;
-            }
-            catch (Exception ex)
-            {
-
-                throw new InvalidOperationException(
-                    $"Error inesperado al ejecutar consulta: {ex.Message}. " +
-                    $"Consulta: {TruncarConsultaParaLog(consultaSQL)}. " +
-                    $"Tipo excepción: {ex.GetType().Name}",
-                    ex
-                );
-            }
+            await using var reader = await comando.ExecuteReaderAsync();
+            tabla.Load(reader);
+            return tabla;
         }
 
+        // ================================================================
+        // MÉTODO: Valida si una consulta SQL con parámetros es sintácticamente correcta
+        // ================================================================
         public async Task<(bool esValida, string? mensajeError)> ValidarConsultaConDictionaryAsync(
-            string consultaSQL,
-            Dictionary<string, object?> parametros
-        )
+            string consultaSQL, 
+            Dictionary<string, object?> parametros)
         {
-            if (string.IsNullOrWhiteSpace(consultaSQL))
-                return (false, "La consulta no puede estar vacía");
-
             try
             {
                 string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
-
-                using var conexion = new SqlConnection(cadenaConexion);
+                await using var conexion = new SqlConnection(cadenaConexion);
                 await conexion.OpenAsync();
+                
+                // Activar modo PARSEONLY para validación sin ejecución
+                await using var comandoParseOn = new SqlCommand("SET PARSEONLY ON", conexion);
+                await comandoParseOn.ExecuteNonQueryAsync();
 
-                using var comandoParseOnly = new SqlCommand("SET PARSEONLY ON", conexion);
-                await comandoParseOnly.ExecuteNonQueryAsync();
+                await using var comando = new SqlCommand(consultaSQL, conexion);
+                comando.CommandTimeout = 5;
 
-                using var comandoValidacion = new SqlCommand(consultaSQL, conexion);
-                comandoValidacion.CommandTimeout = 5; 
+                foreach (var p in parametros ?? new Dictionary<string, object?>())
+                {
+                    string nombreParam = p.Key.StartsWith("@") ? p.Key : $"@{p.Key}";
+                    comando.Parameters.AddWithValue(nombreParam, p.Value ?? DBNull.Value);
+                }
 
-                AgregarParametrosDictionary(comandoValidacion, parametros ?? new Dictionary<string, object?>());
+                await comando.ExecuteNonQueryAsync();
 
-                await comandoValidacion.ExecuteNonQueryAsync();
-
-                using var comandoParseOff = new SqlCommand("SET PARSEONLY OFF", conexion);
+                // Desactivar modo PARSEONLY
+                await using var comandoParseOff = new SqlCommand("SET PARSEONLY OFF", conexion);
                 await comandoParseOff.ExecuteNonQueryAsync();
 
                 return (true, null);
             }
             catch (SqlException sqlEx)
             {
-
                 string mensajeError = sqlEx.Number switch
                 {
                     102 => "Error de sintaxis SQL: revise la estructura de la consulta",
@@ -157,514 +520,97 @@ namespace webapicsharp.Repositorios
             }
             catch (Exception ex)
             {
-                return (false, $"Error inesperado en validación: {ex.Message}");
+                return (false, ex.Message);
             }
         }
 
-        public async Task<DataTable> EjecutarProcedimientoAlmacenadoConDictionaryAsync(
-            string nombreSP,
-            Dictionary<string, object?> parametros
-        )
-        {
-
-            if (string.IsNullOrWhiteSpace(nombreSP))
-                throw new ArgumentException(
-                    "El nombre del procedimiento almacenado no puede estar vacío.",
-                    nameof(nombreSP)
-                );
-
-            var dataTable = new DataTable();
-
-            try
-            {
-
-                string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
-
-                using var conexion = new SqlConnection(cadenaConexion);
-                await conexion.OpenAsync();
-
-                using var comando = new SqlCommand(nombreSP, conexion);
-                comando.CommandType = CommandType.StoredProcedure;  
-                comando.CommandTimeout = 30; 
-
-                AgregarParametrosDictionary(comando, parametros ?? new Dictionary<string, object?>());
-
-                using var lector = await comando.ExecuteReaderAsync();
-                dataTable.Load(lector); 
-
-                return dataTable;
-            }
-            catch (SqlException sqlEx)
-            {
-
-                string mensajeError = sqlEx.Number switch
-                {
-                    2812 => "Procedimiento almacenado no encontrado: verifique nombre y esquema",
-                    201 => "Error en parámetros del procedimiento almacenado: revise nombres y tipos",
-                    2 => "Timeout: El procedimiento tardó demasiado en ejecutarse",
-                    8144 => "Demasiados parámetros especificados para el procedimiento",
-                    8145 => "Parámetro requerido no especificado para el procedimiento",
-                    _ => $"Error SQL Server en procedimiento almacenado (Código {sqlEx.Number}): {sqlEx.Message}"
-                };
-
-                throw new InvalidOperationException(
-                    $"Error al ejecutar procedimiento almacenado '{nombreSP}': {mensajeError}",
-                    sqlEx
-                );
-            }
-            catch (Exception ex)
-            {
-
-                throw new InvalidOperationException(
-                    $"Error inesperado al ejecutar procedimiento almacenado '{nombreSP}': {ex.Message}. " +
-                    $"Tipo excepción: {ex.GetType().Name}",
-                    ex
-                );
-            }
-        }
-
-        public async Task<DataTable> EjecutarConsultaParametrizadaAsync(
-            string consultaSQL,
-            List<SqlParameter>? parametros
-        )
-        {
-
-            if (string.IsNullOrWhiteSpace(consultaSQL))
-                throw new ArgumentException(
-                    "La consulta SQL no puede estar vacía.",
-                    nameof(consultaSQL)
-                );
-
-            var dataTable = new DataTable();
-
-            try
-            {
-
-                string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
-
-                using var conexion = new SqlConnection(cadenaConexion);
-                await conexion.OpenAsync();
-
-                using var comando = new SqlCommand(consultaSQL, conexion);
-                comando.CommandTimeout = 30;
-
-                if (parametros != null && parametros.Count > 0)
-                {
-                    foreach (var parametro in parametros)
-                    {
-                        if (string.IsNullOrWhiteSpace(parametro.ParameterName))
-                            throw new ArgumentException("Parámetro con nombre vacío encontrado");
-
-                        var parametroClonado = new SqlParameter
-                        {
-                            ParameterName = parametro.ParameterName,
-                            Value = parametro.Value ?? DBNull.Value,
-                            SqlDbType = parametro.SqlDbType,
-                            Size = parametro.Size,
-                            Precision = parametro.Precision,
-                            Scale = parametro.Scale
-                        };
-
-                        comando.Parameters.Add(parametroClonado);
-                    }
-                }
-
-                using var lector = await comando.ExecuteReaderAsync();
-                dataTable.Load(lector);
-
-                return dataTable;
-            }
-            catch (SqlException sqlEx)
-            {
-
-                string mensajeError = sqlEx.Number switch
-                {
-                    2 => "Timeout: La consulta tardó demasiado en ejecutarse",
-                    207 => "Nombre de columna inválido en la consulta SQL",
-                    208 => "Tabla o vista especificada no existe en la base de datos",
-                    102 => "Error de sintaxis en la consulta SQL",
-                    515 => "Valor null no permitido en columna que no acepta nulls",
-                    547 => "Violación de restricción de clave foránea",
-                    2812 => "Procedimiento almacenado no encontrado",
-                    _ => $"Error SQL Server (Código {sqlEx.Number}): {sqlEx.Message}"
-                };
-
-                throw new InvalidOperationException(
-                    $"Error al ejecutar consulta SQL: {mensajeError}",
-                    sqlEx
-                );
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    $"Error inesperado al ejecutar consulta: {ex.Message}",
-                    ex
-                );
-            }
-        }
-
-        public async Task<(bool esValida, string? mensajeError)> ValidarConsultaAsync(
-            string consultaSQL,
-            List<SqlParameter>? parametros
-        )
-        {
-            if (string.IsNullOrWhiteSpace(consultaSQL))
-                return (false, "La consulta no puede estar vacía");
-
-            try
-            {
-                string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
-
-                using var conexion = new SqlConnection(cadenaConexion);
-                await conexion.OpenAsync();
-
-                using var comandoParseOnly = new SqlCommand("SET PARSEONLY ON", conexion);
-                await comandoParseOnly.ExecuteNonQueryAsync();
-
-                using var comandoValidacion = new SqlCommand(consultaSQL, conexion);
-                comandoValidacion.CommandTimeout = 5;
-
-                if (parametros != null)
-                {
-                    foreach (var parametro in parametros)
-                    {
-                        comandoValidacion.Parameters.Add(new SqlParameter
-                        {
-                            ParameterName = parametro.ParameterName,
-                            SqlDbType = parametro.SqlDbType,
-                            Value = DBNull.Value
-                        });
-                    }
-                }
-
-                await comandoValidacion.ExecuteNonQueryAsync();
-
-                using var comandoParseOff = new SqlCommand("SET PARSEONLY OFF", conexion);
-                await comandoParseOff.ExecuteNonQueryAsync();
-
-                return (true, null);
-            }
-            catch (SqlException sqlEx)
-            {
-                string mensajeError = sqlEx.Number switch
-                {
-                    102 => "Error de sintaxis SQL",
-                    207 => "Nombre de columna inválido",
-                    208 => "Objeto no válido (tabla/vista no existe)",
-                    _ => $"Error de validación: {sqlEx.Message}"
-                };
-
-                return (false, mensajeError);
-            }
-            catch (Exception ex)
-            {
-                return (false, $"Error inesperado en validación: {ex.Message}");
-            }
-        }
-
-        public async Task<DataTable> EjecutarProcedimientoAlmacenadoAsync(
-            string nombreSP,
-            List<SqlParameter>? parametros)
-        {
-            if (string.IsNullOrWhiteSpace(nombreSP))
-                throw new ArgumentException(
-                    "El nombre del procedimiento almacenado no puede estar vacío.",
-                    nameof(nombreSP)
-                );
-
-            var dataTable = new DataTable();
-
-            try
-            {
-                string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
-
-                using var conexion = new SqlConnection(cadenaConexion);
-                await conexion.OpenAsync();
-
-                using var comando = new SqlCommand(nombreSP, conexion);
-                comando.CommandType = CommandType.StoredProcedure;
-                comando.CommandTimeout = 30;
-
-                if (parametros != null && parametros.Count > 0)
-                {
-                    foreach (var parametro in parametros)
-                    {
-                        if (string.IsNullOrWhiteSpace(parametro.ParameterName))
-                            throw new ArgumentException("Parámetro con nombre vacío encontrado");
-
-                        var parametroClonado = new SqlParameter
-                        {
-                            ParameterName = parametro.ParameterName,
-                            Value = parametro.Value ?? DBNull.Value,
-                            SqlDbType = parametro.SqlDbType,
-                            Size = parametro.Size,
-                            Precision = parametro.Precision,
-                            Scale = parametro.Scale
-                        };
-
-                        comando.Parameters.Add(parametroClonado);
-                    }
-                }
-
-                using var lector = await comando.ExecuteReaderAsync();
-                dataTable.Load(lector);
-
-                return dataTable;
-            }
-            catch (SqlException sqlEx)
-            {
-                string mensajeError = sqlEx.Number switch
-                {
-                    2812 => "Procedimiento almacenado no encontrado",
-                    201 => "Error en parámetros del procedimiento almacenado",
-                    2 => "Timeout: El procedimiento tardó demasiado en ejecutarse",
-                    _ => $"Error SQL Server en procedimiento almacenado (Código {sqlEx.Number}): {sqlEx.Message}"
-                };
-
-                throw new InvalidOperationException(
-                    $"Error al ejecutar procedimiento almacenado '{nombreSP}': {mensajeError}",
-                    sqlEx
-                );
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    $"Error inesperado al ejecutar procedimiento almacenado '{nombreSP}': {ex.Message}",
-                    ex
-                );
-            }
-        }
-
+        // ================================================================
+        // MÉTODOS: Consultas de metadatos de base de datos/tablas
+        // ================================================================
         public async Task<string?> ObtenerEsquemaTablaAsync(string nombreTabla, string esquemaPredeterminado)
         {
-            if (string.IsNullOrWhiteSpace(nombreTabla))
-                throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(nombreTabla));
+            string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
+            await using var conexion = new SqlConnection(cadenaConexion);
+            await conexion.OpenAsync();
+            
+            string sql = @"
+                SELECT TOP 1 TABLE_SCHEMA 
+                FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_NAME = @tabla 
+                ORDER BY 
+                    CASE WHEN TABLE_SCHEMA = @esquema THEN 0 ELSE 1 END, 
+                    TABLE_SCHEMA";
 
-            try
-            {
-                string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
-
-                using var conexion = new SqlConnection(cadenaConexion);
-                await conexion.OpenAsync();
-
-                string consultaSql = @"
-                    SELECT TOP 1 TABLE_SCHEMA 
-                    FROM INFORMATION_SCHEMA.TABLES 
-                    WHERE TABLE_NAME = @nombreTabla 
-                    ORDER BY 
-                        CASE WHEN TABLE_SCHEMA = @esquema THEN 0 ELSE 1 END, 
-                        TABLE_SCHEMA";
-
-                using var comando = new SqlCommand(consultaSql, conexion);
-                comando.Parameters.Add(new SqlParameter("@nombreTabla", nombreTabla));
-                comando.Parameters.Add(new SqlParameter("@esquema", esquemaPredeterminado));
-
-                var resultado = await comando.ExecuteScalarAsync();
-                return resultado?.ToString();
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    $"Error al buscar esquema para tabla '{nombreTabla}': {ex.Message}",
-                    ex
-                );
-            }
+            await using var comando = new SqlCommand(sql, conexion);
+            comando.Parameters.AddWithValue("@tabla", nombreTabla);
+            comando.Parameters.AddWithValue("@esquema", esquemaPredeterminado);
+            
+            var resultado = await comando.ExecuteScalarAsync();
+            return resultado?.ToString();
         }
 
         public async Task<DataTable> ObtenerEstructuraTablaAsync(string nombreTabla, string esquema)
         {
-            if (string.IsNullOrWhiteSpace(nombreTabla))
-                throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(nombreTabla));
+            var tabla = new DataTable();
+            string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
+            await using var conexion = new SqlConnection(cadenaConexion);
+            await conexion.OpenAsync();
+            
+            string sql = @"
+                SELECT 
+                    c.COLUMN_NAME AS Nombre, 
+                    c.DATA_TYPE AS TipoSql, 
+                    c.CHARACTER_MAXIMUM_LENGTH AS Longitud,
+                    c.IS_NULLABLE AS Nullable, 
+                    c.COLUMN_DEFAULT AS ValorDefecto,
+                    COLUMNPROPERTY(OBJECT_ID(QUOTENAME(c.TABLE_SCHEMA) + '.' + QUOTENAME(c.TABLE_NAME)), c.COLUMN_NAME, 'IsIdentity') AS EsIdentidad,
+                    CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 1 ELSE 0 END AS EsPrimaria
+                FROM INFORMATION_SCHEMA.COLUMNS c
+                LEFT JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE pk
+                    ON pk.TABLE_SCHEMA = c.TABLE_SCHEMA 
+                    AND pk.TABLE_NAME = c.TABLE_NAME
+                    AND pk.COLUMN_NAME = c.COLUMN_NAME
+                    AND OBJECTPROPERTY(OBJECT_ID(pk.CONSTRAINT_NAME), 'IsPrimaryKey') = 1
+                WHERE c.TABLE_NAME = @tabla AND c.TABLE_SCHEMA = @esquema
+                ORDER BY c.ORDINAL_POSITION";
 
-            var dataTable = new DataTable();
-
-            try
-            {
-                string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
-
-                using var conexion = new SqlConnection(cadenaConexion);
-                await conexion.OpenAsync();
-
-                string consultaSql = @"
-                    SELECT c.COLUMN_NAME AS Nombre, c.DATA_TYPE AS TipoSql, c.CHARACTER_MAXIMUM_LENGTH AS Longitud,
-                        c.IS_NULLABLE AS Nullable, c.COLUMN_DEFAULT AS ValorDefecto,
-                        COLUMNPROPERTY(OBJECT_ID(QUOTENAME(c.TABLE_SCHEMA) + '.' + QUOTENAME(c.TABLE_NAME)), c.COLUMN_NAME, 'IsIdentity') AS EsIdentidad,
-                        CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 1 ELSE 0 END AS EsPrimaria
-                    FROM INFORMATION_SCHEMA.COLUMNS c
-                    LEFT JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE pk
-                        ON pk.TABLE_SCHEMA = c.TABLE_SCHEMA AND pk.TABLE_NAME = c.TABLE_NAME
-                        AND pk.COLUMN_NAME = c.COLUMN_NAME
-                        AND OBJECTPROPERTY(OBJECT_ID(pk.CONSTRAINT_NAME), 'IsPrimaryKey') = 1
-                    WHERE c.TABLE_NAME = @nombreTabla AND c.TABLE_SCHEMA = @esquema
-                    ORDER BY c.ORDINAL_POSITION";
-
-                using var comando = new SqlCommand(consultaSql, conexion);
-                comando.Parameters.Add(new SqlParameter("@nombreTabla", nombreTabla));
-                comando.Parameters.Add(new SqlParameter("@esquema", esquema));
-
-                using var lector = await comando.ExecuteReaderAsync();
-                dataTable.Load(lector);
-
-                return dataTable;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    $"Error al obtener estructura de tabla '{esquema}.{nombreTabla}': {ex.Message}",
-                    ex
-                );
-            }
+            await using var comando = new SqlCommand(sql, conexion);
+            comando.Parameters.AddWithValue("@tabla", nombreTabla);
+            comando.Parameters.AddWithValue("@esquema", esquema);
+            
+            await using var reader = await comando.ExecuteReaderAsync();
+            tabla.Load(reader);
+            return tabla;
         }
 
         public async Task<DataTable> ObtenerEstructuraBaseDatosAsync(string? nombreBD)
         {
-            var dataTable = new DataTable();
+            var tabla = new DataTable();
+            string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
+            await using var conexion = new SqlConnection(cadenaConexion);
+            await conexion.OpenAsync();
+            
+            string sql = @"
+                SELECT 
+                    t.TABLE_SCHEMA AS Esquema,
+                    t.TABLE_NAME AS Tabla,
+                    c.COLUMN_NAME AS Columna,
+                    c.DATA_TYPE AS TipoDato,
+                    c.CHARACTER_MAXIMUM_LENGTH AS LongitudMaxima,
+                    c.IS_NULLABLE AS Nullable,
+                    CASE WHEN COLUMNPROPERTY(OBJECT_ID(t.TABLE_SCHEMA + '.' + t.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') = 1 
+                        THEN 'SI' ELSE 'NO' END AS Identidad,
+                    c.ORDINAL_POSITION AS Posicion
+                FROM INFORMATION_SCHEMA.TABLES t
+                INNER JOIN INFORMATION_SCHEMA.COLUMNS c
+                    ON t.TABLE_SCHEMA = c.TABLE_SCHEMA AND t.TABLE_NAME = c.TABLE_NAME
+                WHERE t.TABLE_TYPE = 'BASE TABLE'
+                ORDER BY t.TABLE_SCHEMA, t.TABLE_NAME, c.ORDINAL_POSITION";
 
-            try
-            {
-                string cadenaConexion = _proveedorConexion.ObtenerCadenaConexion();
-
-                using var conexion = new SqlConnection(cadenaConexion);
-                await conexion.OpenAsync();
-
-                string consultaSql = @"
-                    SELECT 
-                        t.TABLE_SCHEMA AS Esquema,
-                        t.TABLE_NAME AS Tabla,
-                        c.COLUMN_NAME AS Columna,
-                        c.DATA_TYPE AS TipoDato,
-                        c.CHARACTER_MAXIMUM_LENGTH AS LongitudMaxima,
-                        c.IS_NULLABLE AS Nullable,
-                        CASE WHEN COLUMNPROPERTY(OBJECT_ID(t.TABLE_SCHEMA + '.' + t.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') = 1 THEN 'SI' ELSE 'NO' END AS Identidad,
-                        c.ORDINAL_POSITION AS Posicion
-                    FROM INFORMATION_SCHEMA.TABLES t
-                    INNER JOIN INFORMATION_SCHEMA.COLUMNS c
-                        ON t.TABLE_SCHEMA = c.TABLE_SCHEMA AND t.TABLE_NAME = c.TABLE_NAME
-                    WHERE t.TABLE_TYPE = 'BASE TABLE'
-                    ORDER BY t.TABLE_SCHEMA, t.TABLE_NAME, c.ORDINAL_POSITION";
-
-                using var comando = new SqlCommand(consultaSql, conexion);
-                using var lector = await comando.ExecuteReaderAsync();
-                dataTable.Load(lector);
-
-                return dataTable;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    $"Error al obtener estructura de base de datos: {ex.Message}",
-                    ex
-                );
-            }
+            await using var comando = new SqlCommand(sql, conexion);
+            await using var reader = await comando.ExecuteReaderAsync();
+            tabla.Load(reader);
+            return tabla;
         }
-
-        private static void AgregarParametrosDictionary(SqlCommand comando, Dictionary<string, object?> parametros)
-        {
-            foreach (var kvp in parametros)
-            {
-
-                string nombreParametro = NormalizarNombreParametro(kvp.Key);
-
-                if (string.IsNullOrWhiteSpace(nombreParametro))
-                    throw new ArgumentException($"Nombre de parámetro inválido: '{kvp.Key}'");
-
-                var sqlParameter = CrearSqlParameterOptimizado(nombreParametro, kvp.Value);
-
-                comando.Parameters.Add(sqlParameter);
-            }
-        }
-
-        private static SqlParameter CrearSqlParameterOptimizado(string nombre, object? valor)
-        {
-
-            if (valor == null || valor == DBNull.Value)
-            {
-                return new SqlParameter(nombre, SqlDbType.NVarChar) { Value = DBNull.Value };
-            }
-
-            return valor switch
-            {
-
-                int intVal => new SqlParameter(nombre, SqlDbType.Int) { Value = intVal },
-                long longVal => new SqlParameter(nombre, SqlDbType.BigInt) { Value = longVal },
-                short shortVal => new SqlParameter(nombre, SqlDbType.SmallInt) { Value = shortVal },
-                byte byteVal => new SqlParameter(nombre, SqlDbType.TinyInt) { Value = byteVal },
-
-                decimal decVal => new SqlParameter(nombre, SqlDbType.Decimal) { Value = decVal },
-                double doubleVal => new SqlParameter(nombre, SqlDbType.Float) { Value = doubleVal },
-                float floatVal => new SqlParameter(nombre, SqlDbType.Real) { Value = floatVal },
-
-                DateTime dtVal => new SqlParameter(nombre, SqlDbType.DateTime2) { Value = dtVal },
-                DateOnly dateVal => new SqlParameter(nombre, SqlDbType.Date) 
-                { 
-                    Value = dateVal.ToDateTime(TimeOnly.MinValue) 
-                },
-                TimeOnly timeVal => new SqlParameter(nombre, SqlDbType.Time) 
-                { 
-                    Value = timeVal.ToTimeSpan() 
-                },
-
-                bool boolVal => new SqlParameter(nombre, SqlDbType.Bit) { Value = boolVal },
-                Guid guidVal => new SqlParameter(nombre, SqlDbType.UniqueIdentifier) { Value = guidVal },
-                byte[] bytesVal => new SqlParameter(nombre, SqlDbType.VarBinary) { Value = bytesVal },
-
-                string strVal => CrearParametroTextoOptimizado(nombre, strVal),
-                char charVal => new SqlParameter(nombre, SqlDbType.NChar, 1) { Value = charVal.ToString() },
-
-                _ => new SqlParameter(nombre, SqlDbType.NVarChar) { Value = valor.ToString() ?? "" }
-            };
-        }
-
-        private static SqlParameter CrearParametroTextoOptimizado(string nombre, string valor)
-        {
-
-            if (string.IsNullOrEmpty(valor))
-            {
-                return new SqlParameter(nombre, SqlDbType.NVarChar, 1) { Value = DBNull.Value };
-            }
-
-            return valor.Length switch
-            {
-
-                <= 50 => new SqlParameter(nombre, SqlDbType.NVarChar, 50) { Value = valor },
-                <= 255 => new SqlParameter(nombre, SqlDbType.NVarChar, 255) { Value = valor },
-                <= 4000 => new SqlParameter(nombre, SqlDbType.NVarChar, 4000) { Value = valor },
-
-                _ => new SqlParameter(nombre, SqlDbType.NText) { Value = valor }
-            };
-        }
-
-        private static string NormalizarNombreParametro(string nombre)
-        {
-            if (string.IsNullOrWhiteSpace(nombre)) return "";
-
-            string nombreLimpio = nombre.Trim();
-
-            if (!nombreLimpio.StartsWith("@"))
-            {
-                nombreLimpio = "@" + nombreLimpio;
-            }
-
-            if (nombreLimpio.Length == 1) 
-            {
-                return "";
-            }
-
-            return nombreLimpio;
-        }
-
-        private static string TruncarConsultaParaLog(string consulta, int maxLength = 200)
-        {
-            if (string.IsNullOrEmpty(consulta)) return "[consulta vacía]";
-
-            return consulta.Length > maxLength 
-                ? consulta.Substring(0, maxLength) + "..." 
-                : consulta;
-        }
-
     }
 }

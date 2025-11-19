@@ -1,0 +1,199 @@
+@page "/dashboard"
+
+<PageTitle>Impact Reports - Dashboard</PageTitle>
+
+<style>
+    .statistics-button1,
+    .statistics-button2 {
+        border: none !important;
+        outline: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+    }
+
+    .statistics-button1:focus,
+    .statistics-button2:focus,
+    .statistics-button1:active,
+    .statistics-button2:active {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    .statistics-primary1,
+    .statistics-primary2 {
+        border: none !important;
+        display: block !important;
+        width: 100% !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+    }
+</style>
+<div class="statistics-container10">
+    <div class="statistics-statistics">
+        <div class="statistics-section1">
+            <div class="statistics-container11">
+                <span class="statistics-text10">Impact Reports</span>
+                <span class="statistics-text11">
+                    Overview of animal admissions and releases
+                </span>
+                <button class="statistics-button1" @onclick="ExportPDF">
+                    <div class="statistics-primary1">
+                        <span class="statistics-text12">Export PDF</span>
+                    </div>
+                </button>
+            </div>
+            <img src="/images/vector2001558-c1sa.svg" alt="Vector2001558" class="statistics-vector2001" />
+        </div>
+
+        <div class="statistics-form">
+            <div class="statistics-container12">
+                <div class="statistics-container13"></div>
+                <span class="statistics-text13">Filter Reports</span>
+            </div>
+            <div class="statistics-list1">
+                <div class="statistics-row1">
+                    <div class="statistics-input">
+                        <span class="statistics-text14">Date Range</span>
+                        <div class="statistics-textfield">
+                            <span class="statistics-text15">From - To</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="statistics-button2" @onclick="ApplyFilters">
+                    <div class="statistics-primary2">
+                        <span class="statistics-text16">Apply Filters</span>
+                    </div>
+                </button>
+            </div>
+            <img src="/images/vector2001558-j0qd.svg" alt="Vector2001558" class="statistics-vector2002" />
+        </div>
+
+        <div class="statistics-charts">
+            <div class="statistics-container14">
+                <span class="statistics-text17">Animals Ingressed vs Released</span>
+            </div>
+            <div class="statistics-container15">
+                <span class="statistics-text18">Animals Ingressed vs Released by Month</span>
+                <span class="statistics-text19">Count</span>
+                <div class="statistics-graph">
+                    <img src="/images/vector21558-zjqw.svg" alt="Vector21558" class="statistics-vector2" />
+                    <img src="/images/vector211558-b3s7.svg" alt="Vector211558" class="statistics-vector21" />
+                    <img src="/images/vector241558-s7a7.svg" alt="Vector241558" class="statistics-vector24" />
+                    <img src="/images/vector251558-xk6.svg" alt="Vector251558" class="statistics-vector25" />
+                    <img src="/images/vector231558-hf0a.svg" alt="Vector231558" class="statistics-vector23" />
+                    <img src="/images/rectangle41301558-88sg-200w.png" alt="Rectangle41301558" class="statistics-rectangle4130" />
+                    <img src="/images/rectangle41311558-ltg-200w.png" alt="Rectangle41311558" class="statistics-rectangle4131" />
+                    <img src="/images/rectangle41321558-u38a-200w.png" alt="Rectangle41321558" class="statistics-rectangle4132" />
+                    <img src="/images/rectangle41331558-f1bu-200w.png" alt="Rectangle41331558" class="statistics-rectangle4133" />
+                    <img src="/images/rectangle41341558-8nkb-200w.png" alt="Rectangle41341558" class="statistics-rectangle4134" />
+                    <img src="/images/rectangle41351558-qfe-200w.png" alt="Rectangle41351558" class="statistics-rectangle4135" />
+                    <img src="/images/rectangle41361558-jhkj-200w.png" alt="Rectangle41361558" class="statistics-rectangle4136" />
+                </div>
+                <span class="statistics-text20">Month</span>
+            </div>
+            <img src="/images/vector2001558-n4uo.svg" alt="Vector2001558" class="statistics-vector2003" />
+            <div class="statistics-list2">
+                <div class="statistics-row2">
+                    <div class="statistics-container16"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="statistics-data-metrics">
+            <div class="statistics-container17">
+                <div class="statistics-container18">
+                    <span class="statistics-text21">Monthly Report Summary</span>
+                </div>
+            </div>
+            <div class="statistics-list3">
+                <div class="statistics-row3">
+                    <div class="statistics-metric1">
+                        <span class="statistics-text22">Total Admissions</span>
+                        <span class="statistics-text23">@totalAdmissions</span>
+                    </div>
+                    <div class="statistics-metric2">
+                        <span class="statistics-text24">Total Releases</span>
+                        <span class="statistics-text25">@totalReleases</span>
+                    </div>
+                </div>
+                <div class="statistics-row4">
+                    <div class="statistics-metric3">
+                        <span class="statistics-text26">Success Rate</span>
+                        <span class="statistics-text27">@successRate%</span>
+                        <span class="statistics-text28">+10%</span>
+                    </div>
+                </div>
+            </div>
+            <img src="/images/vector2001558-h4z2.svg" alt="Vector2001558" class="statistics-vector2004" />
+        </div>
+
+        <div class="statistics-list4">
+            <div class="statistics-container19">
+                <span class="statistics-text29">Detailed Report</span>
+            </div>
+            <div class="statistics-list5">
+                @foreach (var report in monthlyReports)
+                {
+                    <div class="statistics-row5">
+                        <div class="statistics-item1">
+                            <div class="statistics-frame1">
+                                <span class="statistics-text30">📅</span>
+                            </div>
+                            <div class="statistics-frame4273189061">
+                                <span class="statistics-text31">@report.Month</span>
+                                <span class="statistics-text32">@report.Year</span>
+                            </div>
+                            <span class="statistics-text33">
+                                Admissions: @report.Admissions, Releases: @report.Releases, Success Rate: @report.SuccessRate%
+                            </span>
+                            <img src="/images/vector2001558-9c26.svg" alt="Vector2001558" class="statistics-vector2005" />
+                        </div>
+                    </div>
+                }
+            </div>
+            <img src="/images/vector2001558-xel4.svg" alt="Vector2001558" class="statistics-vector2008" />
+        </div>
+
+        <div class="statistics-section2">
+            <div class="statistics-container20">
+                <span class="statistics-text42">© 2023 Animal Welfare Organization</span>
+                <span class="statistics-text43">All rights reserved</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int totalAdmissions = 150;
+    private int totalReleases = 120;
+    private int successRate = 80;
+
+    private List<MonthlyReport> monthlyReports = new List<MonthlyReport>
+    {
+        new MonthlyReport { Month = "January", Year = "2019", Admissions = 30, Releases = 25, SuccessRate = 83 },
+        new MonthlyReport { Month = "February", Year = "2019", Admissions = 20, Releases = 18, SuccessRate = 90 },
+        new MonthlyReport { Month = "March", Year = "2019", Admissions = 25, Releases = 20, SuccessRate = 80 }
+    };
+
+    private void ExportPDF()
+    {
+        // Implementar lógica de exportación a PDF
+        Console.WriteLine("Exportando PDF...");
+    }
+
+    private void ApplyFilters()
+    {
+        // Implementar lógica de filtros
+        Console.WriteLine("Aplicando filtros...");
+    }
+
+    public class MonthlyReport
+    {
+        public string? Month { get; set; }
+        public string? Year { get; set; }
+        public int Admissions { get; set; }
+        public int Releases { get; set; }
+        public int SuccessRate { get; set; }
+    }
+}

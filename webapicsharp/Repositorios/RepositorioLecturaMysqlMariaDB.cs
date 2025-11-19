@@ -1,27 +1,58 @@
+// -----------------------------------------------------------------------------
+// Archivo   : RepositorioLecturaMysqlMariaDB.cs
+// Ruta      : webapicsharp/Repositorios/RepositorioLecturaMysqlMariaDB.cs
+// Propósito : Implementar IRepositorioLecturaTabla para MySQL/MariaDB,
+//             con soporte de operaciones CRUD y encriptación de contraseñas.
+// Dependencias:
+//   - Paquetes NuGet instalados: MySql.Data y MySqlConnector
+//   - Contratos: IRepositorioLecturaTabla, IProveedorConexion
+//   - Utilidad: EncriptacionBCrypt
+// -----------------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 
+// -----------------------------------------------------------------------------
+// Dependencias de MySQL/MariaDB
+// -----------------------------------------------------------------------------
+// Hay dos opciones. Basta con descomentar una y dejar la otra comentada.
+// Ambas funcionan para MySQL y MariaDB.
+//
+// Opción 1: Conector oficial de Oracle (paquete MySql.Data)
+// using MySql.Data.MySqlClient;
+//
+// Opción 2: Conector alternativo de alto rendimiento (paquete MySqlConnector)
 using MySqlConnector;
 
-using webapicsharp.Repositorios.Abstracciones;      
-using webapicsharp.Servicios.Abstracciones;         
-using webapicsharp.Servicios.Utilidades;            
+using webapicsharp.Repositorios.Abstracciones;      // Contrato IRepositorioLecturaTabla
+using webapicsharp.Servicios.Abstracciones;         // Contrato IProveedorConexion
+using webapicsharp.Servicios.Utilidades;            // EncriptacionBCrypt
 
 namespace webapicsharp.Repositorios
 {
-
+    /// <summary>
+    /// Repositorio concreto para MySQL/MariaDB que implementa las operaciones
+    /// de IRepositorioLecturaTabla. Soporta creación, lectura, actualización,
+    /// eliminación y obtención de hash de contraseñas.
+    /// </summary>
     public sealed class RepositorioLecturaMysqlMariaDB : IRepositorioLecturaTabla
     {
         private readonly IProveedorConexion _proveedorConexion;
 
+        /// <summary>
+        /// Constructor que recibe el proveedor de cadena de conexión.
+        /// </summary>
         public RepositorioLecturaMysqlMariaDB(IProveedorConexion proveedorConexion)
         {
             _proveedorConexion = proveedorConexion ?? throw new ArgumentNullException(nameof(proveedorConexion));
         }
 
+        // ---------------------------------------------------------------------
+        // Método: ObtenerFilasAsync
+        // Propósito: Devolver todas las filas de una tabla, con un límite máximo.
+        // ---------------------------------------------------------------------
         public async Task<IReadOnlyList<Dictionary<string, object?>>> ObtenerFilasAsync(
             string nombreTabla,
             string? esquema,
@@ -31,7 +62,7 @@ namespace webapicsharp.Repositorios
             if (string.IsNullOrWhiteSpace(nombreTabla))
                 throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(nombreTabla));
 
-            int limiteFinal = limite ?? 1000;  
+            int limiteFinal = limite ?? 1000;  // Límite por defecto si no se indica
             string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "" : $"`{esquema}`.";
 
             string sql = $"SELECT * FROM {esquemaFinal}`{nombreTabla}` LIMIT @limite";
@@ -59,6 +90,10 @@ namespace webapicsharp.Repositorios
             return filas;
         }
 
+        // ---------------------------------------------------------------------
+        // Método: ObtenerPorClaveAsync
+        // Propósito: Devolver filas que coincidan con una clave específica.
+        // ---------------------------------------------------------------------
         public async Task<IReadOnlyList<Dictionary<string, object?>>> ObtenerPorClaveAsync(
             string nombreTabla,
             string? esquema,
@@ -98,6 +133,11 @@ namespace webapicsharp.Repositorios
             return filas;
         }
 
+        // ---------------------------------------------------------------------
+        // Método: CrearAsync
+        // Propósito: Insertar un nuevo registro en la tabla.
+        // Nota: Soporta encriptación de campos sensibles como contraseñas.
+        // ---------------------------------------------------------------------
         public async Task<bool> CrearAsync(
             string nombreTabla,
             string? esquema,
@@ -112,6 +152,7 @@ namespace webapicsharp.Repositorios
 
             string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "" : $"`{esquema}`.";
 
+            // Encriptar campos sensibles si se solicita (ejemplo: "password,otro")
             if (!string.IsNullOrWhiteSpace(camposEncriptar))
             {
                 foreach (var campo in camposEncriptar.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
@@ -152,6 +193,10 @@ namespace webapicsharp.Repositorios
             return afectados > 0;
         }
 
+        // ---------------------------------------------------------------------
+        // Método: ActualizarAsync
+        // Propósito: Modificar columnas de un registro identificado por una clave.
+        // ---------------------------------------------------------------------
         public async Task<int> ActualizarAsync(
             string nombreTabla,
             string? esquema,
@@ -170,6 +215,7 @@ namespace webapicsharp.Repositorios
 
             string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "" : $"`{esquema}`.";
 
+            // Encriptar campos sensibles si se solicita
             if (!string.IsNullOrWhiteSpace(camposEncriptar))
             {
                 foreach (var campo in camposEncriptar.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
@@ -209,6 +255,10 @@ namespace webapicsharp.Repositorios
             return afectados;
         }
 
+        // ---------------------------------------------------------------------
+        // Método: EliminarAsync
+        // Propósito: Borrar registros a partir de una clave.
+        // ---------------------------------------------------------------------
         public async Task<int> EliminarAsync(
             string nombreTabla,
             string? esquema,
@@ -237,6 +287,10 @@ namespace webapicsharp.Repositorios
             return afectados;
         }
 
+        // ---------------------------------------------------------------------
+        // Método: ObtenerHashContrasenaAsync
+        // Propósito: Recuperar el hash de contraseña de un usuario.
+        // ---------------------------------------------------------------------
         public async Task<string?> ObtenerHashContrasenaAsync(
             string nombreTabla,
             string? esquema,

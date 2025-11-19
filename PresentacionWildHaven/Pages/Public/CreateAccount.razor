@@ -1,0 +1,212 @@
+@page "/create-account"
+@inject NavigationManager Navigation
+@using PresentacionWildHaven.Models
+@using PresentacionWildHaven.Models.DTOs
+<link href="css/style.css" rel="stylesheet" />
+<link href="css/index.css" rel="stylesheet" />
+
+<div class="create-account-container">
+    <header class="header">
+    <NavLink href="/">
+        <img alt="BeigeandGreyModernPawIconPetStoreLogo111510"
+            src="/images/beigeandgreymodernpawiconpetstorelogo111510-rg-200h.png" class="home-logo" />
+    </NavLink>
+    </header>
+
+    <div class="content">
+        <div class="left-section">
+            <h2 class="title">Create an Account</h2>
+            <p class="subtitle">Please fill in the details below.</p>
+        </div>
+
+        <div class="right-section">
+            <EditForm Model="@model" OnValidSubmit="@HandleSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <InputText id="fullName" class="form-input" @bind-Value="model.FullName"
+                        placeholder="Enter your full name" />
+                    <ValidationMessage For="@(() => model.FullName)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <InputText id="email" type="email" class="form-input" @bind-Value="model.Email"
+                        placeholder="Enter your email address" />
+                    <ValidationMessage For="@(() => model.Email)" />
+                </div>
+                <div class="form-group">
+                    <label for="telefono">Teléfono (Opcional)</label>
+                    <InputText id="telefono" class="form-input" @bind-Value="model.Telefono"
+                        placeholder="Enter your phone number" />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <InputText id="password" type="password" class="form-input" @bind-Value="model.Password"
+                        @oninput="OnPasswordInput" placeholder="Create a password" />
+                    <div class="strength-indicator">
+                        <div class="strength-bar @GetStrengthClass()"></div>
+                    </div>
+                    <ValidationMessage For="@(() => model.Password)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">
+                        <span class="lock-icon">🔒</span>
+                        Confirm Password
+                    </label>
+                    <InputText id="confirmPassword" type="password" class="form-input"
+                        @bind-Value="model.ConfirmPassword" placeholder="Repeat your password" />
+                    <ValidationMessage For="@(() => model.ConfirmPassword)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="terms">Accept Terms and Conditions</label>
+                    <div class="checkbox-group">
+                        <InputCheckbox id="terms" @bind-Value="model.AcceptTerms" />
+                        <label for="terms" class="checkbox-label">I accept the terms and conditions.</label>
+                    </div>
+                    <ValidationMessage For="@(() => model.AcceptTerms)" />
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" @onclick="BackToLogin">
+                        Back to Login
+                    </button>
+                    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span>Creating...</span>
+                        }
+                        else
+                        {
+                            <span>Create Account</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2023 Our Platform. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="/privacy-policy">Privacy Policy</a>
+            <a href="/terms-of-service">Terms of Service</a>
+        </div>
+    </footer>
+</div>
+
+@inject HttpClient Http
+@code {
+    [SupplyParameterFromForm]
+    private Usuario model { get; set; } = new();
+    private bool isSubmitting = false;
+    private const string urlBaseApi = "api/usuarios?camposEncriptar=passwordHash";
+    private int passwordStrength = 0;
+
+    private void OnPasswordInput(ChangeEventArgs e)
+    {
+        var password = e.Value?.ToString() ?? "";
+        passwordStrength = CalculatePasswordStrength(password);
+    }
+
+    private int CalculatePasswordStrength(string password)
+    {
+        if (string.IsNullOrEmpty(password)) return 0;
+
+        int strength = 0;
+        if (password.Length >= 8) strength++;
+        if (password.Any(char.IsUpper)) strength++;
+        if (password.Any(char.IsLower)) strength++;
+        if (password.Any(char.IsDigit)) strength++;
+        if (password.Any(ch => !char.IsLetterOrDigit(ch))) strength++;
+
+        return Math.Min(strength, 3);
+    }
+
+    private string GetStrengthClass()
+    {
+        return passwordStrength switch
+        {
+            0 => "",
+            1 => "weak",
+            2 => "medium",
+            3 => "strong",
+            _ => ""
+        };
+    }
+
+    private string? mensajeError;
+
+    private async Task HandleSubmit()
+    {
+        // Resetea mensajes previos
+        mensajeError = null;
+
+        // Ejecuta validaciones del formulario manualmente
+        var validationContext = new ValidationContext(model);
+        var validationResults = new List<ValidationResult>();
+
+        bool esValido = Validator.TryValidateObject(
+        model,
+        validationContext,
+        validationResults,
+        validateAllProperties: true
+        );
+
+        if (!esValido)
+        {
+
+            mensajeError = string.Join("<br>", validationResults.Select(v => v.ErrorMessage));
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            var usuarioDTO = new RegistroUsuarioDTO
+            {
+                Nombre = model.FullName,
+                Email = model.Email,
+                PasswordHash = model.Password, 
+                Activo = true
+            };
+
+            var respuesta = await Http.PostAsJsonAsync(urlBaseApi, usuarioDTO);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                Console.WriteLine("✅ Usuario creado correctamente.");
+                model = new Usuario();
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensajeError = $"⚠️ No se pudo crear el usuario.<br>{detalle}";
+                Console.WriteLine(mensajeError);
+            }
+        }
+        catch (Exception error)
+        {
+            Console.WriteLine(error.Message);
+            mensajeError = $"❌ Error al crear usuario: {error.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+
+    private void BackToLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+
+
+}

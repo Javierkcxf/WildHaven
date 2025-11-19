@@ -32,14 +32,14 @@ namespace webapicsharp.Controllers
             try
             {
                 var esquemaReal = await _repositorioConsultas.ObtenerEsquemaTablaAsync(nombreTabla, esquema);
-
+                
                 if (string.IsNullOrWhiteSpace(esquemaReal))
                     return NotFound($"No se encontró la tabla '{nombreTabla}' en ningún esquema.");
 
                 var estructura = await _repositorioConsultas.ObtenerEstructuraTablaAsync(nombreTabla, esquemaReal);
-
+                
                 var lista = ConvertirDataTableALista(estructura);
-
+                
                 return Ok(new { datos = lista, total = lista.Count });
             }
             catch (System.Exception ex)
@@ -57,7 +57,7 @@ namespace webapicsharp.Controllers
             {
                 var estructura = await _repositorioConsultas.ObtenerEstructuraBaseDatosAsync(nombreBD);
                 var lista = ConvertirDataTableALista(estructura);
-
+                
                 return Ok(new { datos = lista, total = lista.Count });
             }
             catch (System.Exception ex)

@@ -28,20 +28,24 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/Error404.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRXJyb3I0MDQucmF6b3I=
+[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/DetalleReporte.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGV0YWxsZVJlcG9ydGUucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/Home.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSG9tZS5yYXpvcg==
+[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/Public/Dashboard.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUHVibGljXERhc2hib2FyZC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/Index.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW5kZXgucmF6b3I=
+[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/Public/Error404.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUHVibGljXEVycm9yNDA0LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/Test.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcVGVzdC5yYXpvcg==
+[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/Public/Home.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUHVibGljXEhvbWUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/Public/Index.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUHVibGljXEluZGV4LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Shared/Toast.razor]
@@ -64,6 +68,18 @@ build_metadata.AdditionalFiles.CssScope = b-n8c5jxdwom
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0XE5hdk1lbnUucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-tzx3brvmi0
 
-[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/CreateAccount.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ3JlYXRlQWNjb3VudC5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = b-ww12x59d8f
+[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/Public/CreateAccount.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUHVibGljXENyZWF0ZUFjY291bnQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-ydpvqneq9o
+
+[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/Public/FastReport.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUHVibGljXEZhc3RSZXBvcnQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-zo0u0shmfj
+
+[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Pages/Public/Logeo.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUHVibGljXExvZ2VvLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-okr4unkvu0
+
+[C:/Users/ASUS/Desktop/WildHaven/PresentacionWildHaven/Shared/NotificacionesToast.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXE5vdGlmaWNhY2lvbmVzVG9hc3QucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-oleh0fh4ki

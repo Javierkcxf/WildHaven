@@ -4,6 +4,9 @@ namespace PresentacionWildHaven.Models.DTOs
 {
     public class RegistroUsuarioDTO
     {
+        [JsonIgnore]
+        [JsonPropertyName("usuarioID")]
+        public int UsuarioID { get; set; }
         [JsonPropertyName("nombre")]
         public string Nombre { get; set; } = "";
 

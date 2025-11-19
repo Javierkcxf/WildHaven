@@ -1,0 +1,58 @@
+@using PresentacionWildHaven.Services.Notifications
+@implements IDisposable
+@inject INotificable NotificacionService
+
+<div class="toast-container">
+    @foreach (var notificacion in _notificaciones)
+    {
+        <div class="alert @notificacion.ObtenerClaseCSS() alert-dismissible fade show toast-item" role="alert">
+            <span class="toast-icon">@notificacion.ObtenerIcono()</span>
+            <span class="toast-mensaje">@notificacion.Mensaje</span>
+
+            <button type="button"
+                    class="btn-close"
+                    @onclick="() => CerrarNotificacion(notificacion.Id)">
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+
+    private List<NotificacionModelo> _notificaciones = new();
+
+    protected override void OnInitialized()
+    {
+        if (NotificacionService is NotificacionService service)
+        {
+            service.OnChange += ActualizarNotificaciones;
+            _notificaciones = service.Notificaciones.ToList();
+        }
+    }
+
+    private void ActualizarNotificaciones()
+    {
+        if (NotificacionService is NotificacionService service)
+        {
+            _notificaciones = service.Notificaciones.ToList();
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void CerrarNotificacion(Guid id)
+    {
+        if (NotificacionService is NotificacionService service)
+        {
+            service.OcultarNotificacion(id);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (NotificacionService is NotificacionService service)
+        {
+            service.OnChange -= ActualizarNotificaciones;
+        }
+    }
+}

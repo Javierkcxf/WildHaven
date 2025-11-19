@@ -23,7 +23,7 @@
             "type": "process",
             "args": [
                 "clean",
-                "${workspaceFolder}/TuProyecto.csproj"
+                "${workspaceFolder}/PresentacionWildHaven.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

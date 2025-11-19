@@ -1,0 +1,46 @@
+.toast-container[b-oleh0fh4ki] {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 400px;
+}
+
+.toast-item[b-oleh0fh4ki] {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: slideIn-b-oleh0fh4ki 0.3s ease-out;
+}
+
+.toast-icon[b-oleh0fh4ki] {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.toast-mensaje[b-oleh0fh4ki] {
+    flex-grow: 1;
+    font-weight: 500;
+}
+
+@keyframes slideIn-b-oleh0fh4ki {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .toast-container[b-oleh0fh4ki] {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}

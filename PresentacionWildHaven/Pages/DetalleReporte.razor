@@ -1,0 +1,261 @@
+@page "/reporte/{ReporteId:int}"
+@using PresentacionWildHaven.Models
+@using PresentacionWildHaven.Patterns.Observer
+@using PresentacionWildHaven.Services.Notifications
+@inject HttpClient Http
+@inject INotificable NotificacionService
+
+<link href="css/style.css" rel="stylesheet" />
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3>Detalle del Reporte #@ReporteId</h3>
+        </div>
+
+        <div class="card-body">
+            @if (_reporte != null)
+            {
+                <!-- Información principal -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Reportante:</strong> @_reporte.NombreReportante
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Estado Actual:</strong>
+                        <span class="badge @ObtenerClaseBadge(_reporte.Estado?.Nombre)">
+                            @(_reporte.Estado?.Nombre ?? "Sin estado")
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Información adicional -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Tipo de Animal:</strong> @_reporte.TipoMascota
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Teléfono:</strong> @_reporte.TelefonoReportante
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <strong>Ubicación:</strong> @_reporte.DireccionTexto
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_reporte.InformacionAdicional))
+                {
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <strong>Información Adicional:</strong>
+                            <p>@_reporte.InformacionAdicional</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- Fechas -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Fecha de Creación:</strong>
+                        @_reporte.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Última Actualización:</strong>
+                        @_reporte.FechaActualizacion.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+                </div>
+
+                <hr />
+
+                <!-- Cambiar estado -->
+                <h5>Cambiar Estado</h5>
+
+                @if (_estadosDisponibles.Any())
+                {
+                    <div class="btn-group" role="group">
+                        @foreach (var estado in _estadosDisponibles.OrderBy(e => e.Orden))
+                        {
+                            <button class="btn btn-outline-primary" @onclick="() => CambiarEstado(estado)"
+                                disabled="@(_reporte.EstadoID == estado.EstadoID)">
+                                @estado.Nombre
+                            </button>
+                        }
+                    </div>
+                }
+            }
+            else if (_cargando)
+            {
+                <p>Cargando reporte...</p>
+            }
+            else
+            {
+                <p class="text-danger">No se pudo cargar el reporte.</p>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int ReporteId { get; set; }
+
+    private Reporte? _reporte;
+    private List<EstadoReporte> _estadosDisponibles = new();
+    private bool _cargando = true;
+
+    // ✅ Observadores
+    private NotificadorUsuario? _notificadorUsuario;
+    private ActualizadorDashboard? _actualizadorDashboard;
+    private EstadisticasObserver? _estadisticas;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await CargarEstados();
+        await CargarReporte();
+        ConfigurarObservadores();
+    }
+
+    private async Task CargarEstados()
+    {
+        try
+        {
+            // ✅ Llamada a tu API genérica: GET /api/EstadosReporte
+            var respuesta = await Http.GetFromJsonAsync<ApiResponse<EstadoReporte>>("api/EstadosReporte");
+            
+            if (respuesta?.Datos != null)
+            {
+                _estadosDisponibles = respuesta.Datos;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar estados: {ex.Message}");
+            NotificacionService.MostrarError("No se pudieron cargar los estados disponibles");
+        }
+    }
+
+    private async Task CargarReporte()
+    {
+        try
+        {
+            // ✅ Llamada a tu API genérica: GET /api/Reportes/ReporteID/{id}
+            var respuesta = await Http.GetFromJsonAsync<ApiResponse<Reporte>>($"api/Reportes/ReporteID/{ReporteId}");
+            
+            if (respuesta?.Datos != null && respuesta.Datos.Any())
+            {
+                _reporte = respuesta.Datos.First();
+                
+                // Cargar el estado completo si solo viene el ID
+                if (_reporte.EstadoID.HasValue && _reporte.Estado == null)
+                {
+                    _reporte.Estado = _estadosDisponibles.FirstOrDefault(e => e.EstadoID == _reporte.EstadoID.Value);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar reporte: {ex.Message}");
+            NotificacionService.MostrarError($"Error al cargar reporte: {ex.Message}");
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private void ConfigurarObservadores()
+    {
+        if (_reporte == null) return;
+
+        _notificadorUsuario = new NotificadorUsuario(NotificacionService);
+        _actualizadorDashboard = new ActualizadorDashboard();
+        _estadisticas = new EstadisticasObserver();
+
+        _reporte.SuscribirObservador(_notificadorUsuario);
+        _reporte.SuscribirObservador(_actualizadorDashboard);
+        _reporte.SuscribirObservador(_estadisticas);
+    }
+
+    private async Task CambiarEstado(EstadoReporte nuevoEstado)
+    {
+        if (_reporte == null) return;
+
+        try
+        {
+            // ✅ Guardar el estado anterior para el Observer
+            var estadoAnterior = _reporte.Estado?.Nombre;
+
+            // ✅ PATRÓN OBSERVER - Notificar cambio localmente
+            _reporte.CambiarEstado(nuevoEstado.EstadoID, nuevoEstado);
+
+            // ✅ Actualizar en la API: PUT /api/Reportes/ReporteID/{id}
+            var datosActualizacion = new Dictionary<string, object?>
+            {
+                { "EstadoID", nuevoEstado.EstadoID },
+                { "FechaActualizacion", DateTime.Now }
+            };
+
+            var respuesta = await Http.PutAsJsonAsync(
+                $"api/Reportes/ReporteID/{ReporteId}", 
+                datosActualizacion
+            );
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                NotificacionService.MostrarExito($"Estado actualizado: {estadoAnterior} → {nuevoEstado.Nombre}");
+                StateHasChanged();
+            }
+            else
+            {
+                var contenidoError = await respuesta.Content.ReadAsStringAsync();
+                NotificacionService.MostrarError($"No se pudo actualizar el estado. Error: {contenidoError}");
+                
+                // ✅ Revertir el cambio local si falla la API
+                if (_reporte.Estado != null)
+                {
+                    var estadoOriginal = _estadosDisponibles.FirstOrDefault(e => e.Nombre == estadoAnterior);
+                    if (estadoOriginal != null)
+                    {
+                        _reporte.EstadoID = estadoOriginal.EstadoID;
+                        _reporte.Estado = estadoOriginal;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificacionService.MostrarError($"Error: {ex.Message}");
+        }
+    }
+
+    private string ObtenerClaseBadge(string? nombreEstado)
+    {
+        return nombreEstado switch
+        {
+            "Pendiente" => "bg-secondary",
+            "En Revisión" => "bg-info",
+            "Requiere Rescate" => "bg-danger",
+            "En Atención" => "bg-warning text-dark",
+            "En Rehabilitación" => "bg-primary",
+            "Listo para Liberación" => "bg-success",
+            "Liberado" => "bg-success",
+            "Resuelto" => "bg-success",
+            "Cancelado" => "bg-dark",
+            "Cerrado" => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    // ✅ Clase auxiliar para mapear la respuesta de tu API
+    private class ApiResponse<T>
+    {
+        public string? Tabla { get; set; }
+        public string? Esquema { get; set; }
+        public int? Limite { get; set; }
+        public int Total { get; set; }
+        public List<T> Datos { get; set; } = new();
+    }
+}

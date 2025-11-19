@@ -1,0 +1,57 @@
+.create-report {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(244, 225, 208, 0.80); 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.header {
+    background: linear-gradient(0deg, rgba(244, 225, 208, 1) 0%, rgba(176, 131, 91, 1) 0%, rgba(76, 123, 81, 1) 46%, rgba(172, 130, 90, 1) 100%, rgba(176, 131, 91, 1) 100%);
+    padding: 1.5rem 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.home-logo {
+    width: 100px;
+    height: 100px;
+}
+
+.footer {
+    background-color: rgba(255, 255, 255, 0.3);
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    margin-top: auto; /* ✅ Empuja el footer al fondo */
+}
+
+.footer p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.footer-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.footer-links a {
+    color: #2C3E50;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: #5F8A6F;
+}
+
+.validation-message {
+    color: #E74C3C;
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+    display: block;
+}
